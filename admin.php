@@ -25,12 +25,12 @@ function reserva_wp_admin_scripts() {
 */
 function reserva_wp_settings() { 
 	add_menu_page( 'Reserva WP', 'Reserva WP', 'edit_posts', 'reserva_wp', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Objects', 'Objects', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Object Categories', 'Categories', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Object Data', 'Meta Data', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Object Status', 'Status', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Transactions', 'Transactions', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	add_submenu_page( 'reserva_wp', 'Reserva WP Results', 'Results', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Objects', 'Objects', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Taxonomies', 'Taxonomies', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Data', 'Meta Data', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Status', 'Status', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Transactions', 'Transactions', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	// add_submenu_page( 'reserva_wp', 'Reserva WP Results', 'Results', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 	add_submenu_page( 'reserva_wp', 'Reserva WP Settings', 'Settings', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 }
 
