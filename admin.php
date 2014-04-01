@@ -37,6 +37,7 @@ function reserva_wp_settings() {
 
 /**
 * Create / edit objects function
+* TODO: front-end validation
 */
 function reserva_wp_edit_object($post) {
 
@@ -93,6 +94,7 @@ function reserva_wp_edit_object($post) {
 
 /**
 * Create / edit objects function
+* TODO: front-end validation
 */
 function reserva_wp_edit_status($post) {
 

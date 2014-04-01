@@ -53,6 +53,6 @@ require_once dirname( __FILE__ ) . '/post_types.php';
 ##### require_once dirname( __FILE__ ) . '/taxonomies.php';
 
 // Creates the meta boxes for managing object logic
-// require_once dirname( __FILE__ ) . '/meta_boxes.php';
+require_once dirname( __FILE__ ) . '/meta_boxes.php';
 
 ?>

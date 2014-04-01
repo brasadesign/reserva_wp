@@ -91,10 +91,10 @@ function reserva_wp_transaction_metaboxes_render($post) {
 
 	foreach ($global_transaction_statuses as $s) {
 		$check = '';
-		if($s == $transaction_status)
+		if($s['rwp_name'] == $transaction_status)
 			$check = 'selected="selected"';
 
-		echo '<option value="'.$s['rwp_statuslabel'].'" '.$check.'>'.$s['rwp_statuslabel'].'</option>';
+		echo '<option value="'.$s['rwp_name'].'" '.$check.'>'.$s['rwp_statuslabel'].'</option>';
 	}
 
 	echo '</select></td>';
@@ -184,10 +184,38 @@ function reserva_wp_save_transaction($post_id) {
 		return;
 
 	if( !empty($_POST) && check_admin_referer( 'rwp_update_transaction', 'rwp_nonce_' ) ) {
-		update_post_meta($post_id, 'rwp_transaction_status', $_POST['rwp_transaction_status']);
+		$status = update_post_meta($post_id, 'rwp_transaction_status', $_POST['rwp_transaction_status']);
+
 		update_post_meta($post_id, 'rwp_transaction_user', $_POST['rwp_transaction_user']);
 		update_post_meta($post_id, 'rwp_transaction_object', $_POST['rwp_transaction_object']);
+
+		if($status != false)
+			reserva_wp_status_change($post_id, $_POST['rwp_transaction_status']);
 	}
 		
 }
+
+function reserva_wp_status_change($post_id, $newstatus) {
+
+	$statuses = get_option( 'reserva_wp_transaction_statuses' );
+	$keys = array_keys($statuses);
+
+	if(in_array($newstatus, $keys)) {
+		// This changes the post_status to reflect the reference chosen on setup
+		$postarr = array('ID' => $post_id, 'post_status' => $statuses[$newstatus]['rwp_statusref']);
+		$p = wp_update_post( $postarr, true );
+
+		if( !is_wp_error( $p ) ) {
+			// Action hook for all status changes
+			// TODO: test!
+			do_action( 'rwp_status_changed', $post_id, $newstatus );
+			// Action hook for specific status changes
+			// takes the form of rwp_status_changed_to_{status_name}
+			do_action( 'rwp_status_changed_to_'.$newstatus, $post_id );
+		}
+		
+	}
+
+}
+
 ?>
