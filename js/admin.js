@@ -7,7 +7,7 @@ jQuery(document).ready(function() {
 	jQuery('#rwp_edit_cancel').on('click', function() {
 		jQuery('.rwp_form .main input, .rwp_form textarea').val('');
 		
-		jQuery('#rwp_name').removeAttr('disabled');
+		jQuery('#rwp_name').removeAttr('readonly');
 		jQuery('#rwp_action').val('create');
 		jQuery('#rwp_submit').val('Criar objeto');
 		jQuery('#rwp_edit_cancel').hide();				
@@ -26,7 +26,7 @@ jQuery(document).ready(function() {
 
 			if(nom == "rwp_name") {
 				jQuery('#rwp_orig_name').val(val);
-				jQuery('#rwp_name').attr('disabled','disabled');
+				jQuery('#rwp_name').attr('readonly','readonly');
 			}
 				
 
@@ -42,14 +42,15 @@ jQuery(document).ready(function() {
 	});
 
 	// Actions on the delete object button
-	jQuery('.rwp_delete_object').on('click', function() {
+	jQuery('.rwp_delete_thing').on('click', function() {
 
 		idents = jQuery(this).attr('rel');
+		thing = jQuery('form').find('#rwp_thing').val();
 		
-		if(confirm('Tem certeza que deseja excluir o objeto '+idents+'?')) {
+		if(confirm('Tem certeza que deseja excluir '+idents+'?')) {
 
 			jQuery.post(reserva_wp.ajaxurl, {
-				action: 'reserva_wp_edit_object',
+				action: 'reserva_wp_edit_'+thing,
 				name: idents,
 				ajax: true
 			},

@@ -94,7 +94,7 @@ function reserva_wp_transaction_metaboxes_render($post) {
 		if($s == $transaction_status)
 			$check = 'selected="selected"';
 
-		echo '<option value="'.$s.'" '.$check.'>'.$s.'</option>';
+		echo '<option value="'.$s['rwp_statuslabel'].'" '.$check.'>'.$s['rwp_statuslabel'].'</option>';
 	}
 
 	echo '</select></td>';

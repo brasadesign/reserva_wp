@@ -3,6 +3,7 @@
 add_action( 'admin_menu', 'reserva_wp_settings' );
 add_action( 'admin_enqueue_scripts', 'reserva_wp_admin_scripts' );
 add_action( 'wp_ajax_reserva_wp_edit_object', 'reserva_wp_edit_object' );
+add_action( 'wp_ajax_reserva_wp_edit_status', 'reserva_wp_edit_status' );
 
 /**
 * Settings scripts and styles
@@ -28,7 +29,7 @@ function reserva_wp_settings() {
 	// add_submenu_page( 'reserva_wp', 'Reserva WP Objects', 'Objects', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Taxonomies', 'Taxonomies', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Data', 'Meta Data', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
-	// add_submenu_page( 'reserva_wp', 'Reserva WP Object Status', 'Status', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
+	add_submenu_page( 'reserva_wp', 'Reserva WP Object Status', 'Status', 'edit_posts', 'reserva_wp_status', 'reserva_wp_status_page' );
 	// add_submenu_page( 'reserva_wp', 'Reserva WP Transactions', 'Transactions', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 	// add_submenu_page( 'reserva_wp', 'Reserva WP Results', 'Results', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
 	add_submenu_page( 'reserva_wp', 'Reserva WP Settings', 'Settings', 'edit_posts', 'reserva_wp_settings', 'reserva_wp_settings_page' );
@@ -36,7 +37,6 @@ function reserva_wp_settings() {
 
 /**
 * Create / edit objects function
-* TODO: edit objects
 */
 function reserva_wp_edit_object($post) {
 
@@ -92,6 +92,64 @@ function reserva_wp_edit_object($post) {
 }
 
 /**
+* Create / edit objects function
+*/
+function reserva_wp_edit_status($post) {
+
+	$option = 'reserva_wp_transaction_statuses';
+	
+	// delete_option( $option );
+	$types = get_option( $option );
+
+	// If deleting
+	if($_POST['ajax']) {
+		
+		unset( $types[$_POST['name']] );
+
+		$bool = update_option( $option, $types );
+
+        header( "Content-Type: application/json" );
+		echo json_encode($bool);
+        exit;
+
+	} elseif ( 
+
+		// server side validation
+		!empty( $post['rwp_name'] ) && isset( $post['rwp_name'] ) &&
+		!empty( $post['rwp_statuslabel'] ) && isset( $post['rwp_statuslabel'] ) &&
+		!empty( $post['rwp_statusref'] ) && isset( $post['rwp_statusref'] ) &&
+		!empty( $post['rwp_description'] ) && isset( $post['rwp_description'] )
+		) {
+
+		unset($post['rwp_action']);
+		unset($post['rwp_nonce_']);
+		unset($post['_wp_http_referer']);
+
+		
+
+		if($post['rwp_action'] == 'create') {
+			$types[$post['rwp_name']] = $post;
+			update_option( $option, $types );
+		} else {
+			// in case the name has changed we just wipe it out and replace with the new info
+			if(!empty( $post['rwp_orig_name'] ) && isset( $post['rwp_orig_name'] ))
+				unset( $types[$post['rwp_orig_name']] );
+
+			$types[$post['rwp_name']] = $post;
+			update_option( $option, $types );
+		}
+
+		
+
+		return true;
+
+		} else {
+			return new WP_Error('incomplete', __("Existem campos incompletos no formulário"));
+		}
+	
+}
+
+/**
 * Create / edit objects page
 * TODO: client side validation
 */
@@ -115,6 +173,7 @@ function reserva_wp_settings_page() {
 			<label for="rwp_singlabel"><?php _e('Título do Objeto (singular)', 'reservawp'); ?><input type="text" name="rwp_singlabel" id="rwp_singlabel" /></label>
 			<label for="rwp_description"><?php _e('Descrição do objeto', 'reservawp'); ?><textarea name="rwp_description" id="rwp_description"></textarea></label>
 			<input type="hidden" id="rwp_orig_name" name="rwp_orig_name" value="" />
+			<input type="hidden" id="rwp_thing" name="rwp_thing" value="object" />
 		</fieldset>
 			
 		<input type="hidden" id="rwp_action" name="rwp_action" value="create" />
@@ -125,6 +184,52 @@ function reserva_wp_settings_page() {
 <?php
 
 	reserva_wp_list_objects();
+}
+
+/**
+* Create / edit status page
+* TODO: client side validation
+*/
+function reserva_wp_status_page() {
+
+	if( !empty($_POST) && check_admin_referer( 'rwp_create_status', 'rwp_nonce_' ) )
+		reserva_wp_edit_status($_POST);
+	?>
+	<h1><?php _e('Reserva WP', 'reservawp'); ?></h1>
+	<h3><?php _e('Criar um novo tipo de status', 'reservawp'); ?></h3>
+	<style type="text/css">
+		.rwp_form label { display: block; }
+		.rwp_form input { margin-left: 10px; }
+	</style>
+
+	<form action="" method="post" class="rwp_form">
+		<fieldset class="main">
+			<?php _e('Defina abaixo as características principais do objeto', 'reservawp'); ?>
+			<label for="rwp_name"><?php _e('Nome do Status', 'reservawp'); ?><input type="text" name="rwp_name" id="rwp_name" /></label>
+			<label for="rwp_statuslabel"><?php _e('Título do Status', 'reservawp'); ?><input type="text" name="rwp_statuslabel" id="rwp_statuslabel" /></label>
+			<label for="rwp_statusref"><?php _e('Referência do Status', 'reservawp'); ?>
+				<select name="rwp_statusref">
+					<?php 
+						$statuses = get_post_stati();
+						foreach ($statuses as $key => $value) {
+							echo '<option name="'.$key.'">'.$value.'</option>';
+						}
+					?>
+				</select>
+			</label>
+			<label for="rwp_description"><?php _e('Descrição do Status', 'reservawp'); ?><textarea name="rwp_description" id="rwp_description"></textarea></label>
+			<input type="hidden" id="rwp_orig_name" name="rwp_orig_name" value="" />
+			<input type="hidden" id="rwp_thing" name="rwp_thing" value="status" />
+		</fieldset>
+			
+		<input type="hidden" id="rwp_action" name="rwp_action" value="create" />
+		<?php wp_nonce_field( 'rwp_create_status', 'rwp_nonce_' ); ?>
+		<input type="submit" id="rwp_submit" class="button-primary" value="<?php _e('Criar status', 'reservawp'); ?>">
+		<input style="display: none;" id="rwp_edit_cancel" type="button" class="button-primary" value="<?php _e('Cancelar edição', 'reservawp'); ?>" />
+	</form>
+<?php
+
+	reserva_wp_list_statuses();
 }
 
 function reserva_wp_list_objects() {
@@ -152,7 +257,40 @@ function reserva_wp_list_objects() {
 		<td class="rwp_singlabel"><?php echo $tp->singular_label; ?></td>
 		<td class="rwp_description"><?php echo $tp->description; ?></td>
 		<td><input rel="<?php echo $tp->name; ?>" type="button" class="button-primary rwp_edit_object" value="<?php _e('Editar', 'reservawp'); ?>"></td>
-		<td><input rel="<?php echo $tp->name; ?>" type="button" class="button-primary rwp_delete_object" value="<?php _e('Deletar', 'reservawp'); ?>"></td>
+		<td><input rel="<?php echo $tp->name; ?>" type="button" class="button-primary rwp_delete_thing" value="<?php _e('Deletar', 'reservawp'); ?>"></td>
+	</tr>	
+
+<?php endforeach; ?>
+	</table>
+<?php
+}
+
+function reserva_wp_list_statuses() {
+	
+	$types = get_option( 'reserva_wp_transaction_statuses' ); 
+	?>
+
+	<hr>
+	<h3><?php _e('Editar status', 'reservawp'); ?></h3>
+	<table>
+		<tr>
+			<th><?php _e('Nome', 'reservawp'); ?></th>
+			<th><?php _e('Título', 'reservawp'); ?></th>
+			<th><?php _e('Referência', 'reservawp'); ?></th>
+			<th><?php _e('Descrição', 'reservawp'); ?></th>
+			<th></th>
+			<th></th>
+		</tr>
+	
+<?php foreach ($types as $t) : ?>
+
+	<tr class="rwp_object <?php echo $t['rwp_name']; ?>">
+		<td class="rwp_name"><?php echo $t['rwp_name']; ?></td>
+		<td class="rwp_statuslabel"><?php echo $t['rwp_statuslabel']; ?></td>
+		<td class="rwp_statusref"><?php echo $t['rwp_statusref']; ?></td>
+		<td class="rwp_description"><?php echo $t['rwp_description']; ?></td>
+		<td><input rel="<?php echo $t['rwp_name']; ?>" type="button" class="button-primary rwp_edit_object" value="<?php _e('Editar', 'reservawp'); ?>"></td>
+		<td><input rel="<?php echo $t['rwp_name']; ?>" type="button" class="button-primary rwp_delete_thing" value="<?php _e('Deletar', 'reservawp'); ?>"></td>
 	</tr>	
 
 <?php endforeach; ?>
