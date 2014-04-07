@@ -70,6 +70,10 @@ function reserva_wp_transaction_metaboxes($post) {
 }
 
 function reserva_wp_transaction_metaboxes_render($post) {
+
+	if( $post->post_status == 'auto-draft') {
+		echo 'Os detalhes estarão disponíveis após a publicação';
+	} else {
 ?>
 	<table class="rwp_table rwp_metabox">
 		<tr>
@@ -144,6 +148,7 @@ function reserva_wp_transaction_metaboxes_render($post) {
 <?php
 
 	wp_nonce_field( 'rwp_update_transaction', 'rwp_nonce_' );
+	}
 }
 
 function reserva_wp_transaction_metaboxes_render_readonly($post) {
