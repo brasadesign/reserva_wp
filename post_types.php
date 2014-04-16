@@ -1,7 +1,9 @@
 <?php
 
 add_action( 'init', 'reserva_wp_objects' );
-add_action( 'save_post', 'reserva_wp_save_transaction' );
+// add_action( 'save_post', 'reserva_wp_save_transaction' );
+// add_action( 'wp_insert_post', 'reserva_wp_create_transaction' );
+add_action( 'save_post_post', 'reserva_wp_create_transaction' );
 
 function reserva_wp_objects() {
 
@@ -221,6 +223,54 @@ function reserva_wp_status_change($post_id, $newstatus) {
 		
 	}
 
+}
+
+function reserva_wp_create_transaction($post_id) {
+
+	global $current_user;
+	$user = get_current_user_id();
+
+    // Não é autosave
+     if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) 
+          return;	
+
+	// TODO: ampliar p/ fora do ecotemporadas
+	// Somente este post-type
+	if ( 'listing' != $_POST['post_type'] )
+		return;
+
+	// Nunca este post-type
+	if ( 'rwp_transaction' == $post->post_type )
+		return;
+
+	// Não é revision
+	if ( wp_is_post_revision( $post_id ) )
+		return;
+
+	// Não é tela vazia
+	if ( empty($_POST) )
+		return;
+
+	// wp_die(dump($_POST));
+
+	$transaction = array(
+		'post_title' => microtime(),
+		'post_status' => 'draft',
+		'post_type'	=> 'rwp_transaction'
+	);
+
+	// wp_die($transaction);
+
+	$tid = wp_insert_post( $transaction, true );
+
+
+	if(!is_wp_error( $tid )) {
+
+		update_post_meta( $tid, 'rwp_transaction_status', 'solicitado' );
+		update_post_meta( $tid, 'rwp_transaction_user', $user );
+		update_post_meta( $tid, 'rwp_transaction_object', $post_id );
+	}
+	
 }
 
 ?>
