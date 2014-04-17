@@ -1,9 +1,48 @@
 <?php
 
+register_activation_hook( __FILE__, "reserva_wp_activate" );
+
+// reserva_wp_activate();
+
 add_action( 'admin_menu', 'reserva_wp_settings' );
 add_action( 'admin_enqueue_scripts', 'reserva_wp_admin_scripts' );
 add_action( 'wp_ajax_reserva_wp_edit_object', 'reserva_wp_edit_object' );
 add_action( 'wp_ajax_reserva_wp_edit_status', 'reserva_wp_edit_status' );
+
+/**
+* Scripts de ativação
+* TODO: 
+*/
+function reserva_wp_activate() {
+
+	
+	$reserva_wp_transaction_statuses = get_option( 'reserva_wp_transaction_statuses' );
+	$reserva_wp_objects = get_option( 'reserva_wp_objects' );
+
+	if(!$reserva_wp_transaction_statuses) {
+		$default_transaction_statuses = array(
+			'solicitado'	=> array( 'rwp_name' => 'solicitado',	'rwp_statuslabel' => 'Solicitado', 				'rwp_statusref'	=> 'draft',		'rwp_description' => 'Solicitado' ),
+			'revisao' 		=> array( 'rwp_name' => 'revisao',		'rwp_statuslabel' => 'Em revisão', 				'rwp_statusref'	=> 'draft',		'rwp_description' => 'Em revisão' ),
+			'aguardando'	=> array( 'rwp_name' => 'aguardando',	'rwp_statuslabel' => 'Aguardando Pagamento',	'rwp_statusref'	=> 'draft',		'rwp_description' => 'Aguardando Pagamento' ),
+			'liberado' 		=> array( 'rwp_name' => 'liberado',		'rwp_statuslabel' => 'Liberado',				'rwp_statusref'	=> 'publish',	'rwp_description' => 'Liberado' ),
+			'expirando' 	=> array( 'rwp_name' => 'expirando',	'rwp_statuslabel' => 'Expirando',				'rwp_statusref'	=> 'publish',	'rwp_description' => 'Expirando' ),
+			'retirado' 		=> array( 'rwp_name' => 'retirado',		'rwp_statuslabel' => 'Retirado',				'rwp_statusref'	=> 'private',	'rwp_description' => 'Retirado' )
+		);
+
+		update_option( 'reserva_wp_transaction_statuses', $default_transaction_statuses );
+	}
+
+	if(!$reserva_wp_objects) {
+		$default_objects = array(
+			'listing'	=> array( 'rwp_name' => 'listing', 'rwp_objlabel' => 'Listings', 'rwp_singlabel' => 'Listing', 'rwp_description' => 'Listing ecotemporadas', 'rwp_create_post_type' => false )
+		);
+
+		update_option( 'reserva_wp_objects', $default_objects );
+	}	
+
+	
+}
+
 
 /**
 * Settings scripts and styles
@@ -270,6 +309,7 @@ function reserva_wp_list_objects() {
 function reserva_wp_list_statuses() {
 	
 	$types = get_option( 'reserva_wp_transaction_statuses' ); 
+	
 	?>
 
 	<hr>

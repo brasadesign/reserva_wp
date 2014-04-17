@@ -1,9 +1,10 @@
 <?php
 
 add_action( 'init', 'reserva_wp_objects' );
-// add_action( 'save_post', 'reserva_wp_save_transaction' );
-// add_action( 'wp_insert_post', 'reserva_wp_create_transaction' );
-add_action( 'save_post_post', 'reserva_wp_create_transaction' );
+add_action( 'save_post', 'reserva_wp_save_transaction' );
+// TODO: limpar hook abaixo pra funcionar de forma generica
+add_action( 'save_post_listing', 'reserva_wp_create_transaction' );
+// add_action( 'rwp_status_changed', 'reserva_wp_email_status_changes' );
 
 function reserva_wp_objects() {
 
@@ -27,6 +28,10 @@ function reserva_wp_objects() {
 	if($types) :
 		// Registra os tipos objetos criados pelo usuário
 		foreach ($types as $object) {
+			// Pula os tipos marcados
+			if(isset($object['rwp_create_post_type']) && false == $object['rwp_create_post_type'] )
+				continue;
+
 			register_post_type( $object['rwp_name'], 
 				array( 'public' => true, 
 						'description' => esc_html($object['rwp_description']),
@@ -127,7 +132,7 @@ function reserva_wp_transaction_metaboxes_render($post) {
 	// TODO: melhorar o filtro
 	$global_transaction_objects = get_option( 'reserva_wp_objects' );
 	$post_types = array_keys($global_transaction_objects);
-	$transaction_objects = get_posts( array( 'post_type' => $post_types, 'numberposts' => -1) );
+	$transaction_objects = get_posts( array( 'post_type' => $post_types, 'numberposts' => -1, 'post_status' => 'any' ) );
 	$transaction_object = get_post_meta( $post->ID, 'rwp_transaction_object', true );
 	
 	echo '<td>
@@ -143,7 +148,7 @@ function reserva_wp_transaction_metaboxes_render($post) {
 	}
 
 	echo '</select></td>';	
-
+	
 ?>
 		</tr>
 	</table>
@@ -182,49 +187,56 @@ function reserva_wp_transaction_metaboxes_render_readonly($post) {
 	echo '</table>';
 }
 
-function reserva_wp_save_transaction($post_id) {
+function reserva_wp_save_transaction($transaction_id) {
 
 	if( 'rwp_transaction' != $_POST['post_type'] )
 		return;
 
-	if ( wp_is_post_revision( $post_id ) )
+	if ( wp_is_post_revision( $transaction_id ) )
 		return;
 
 	if( !empty($_POST) && check_admin_referer( 'rwp_update_transaction', 'rwp_nonce_' ) ) {
-		$status = update_post_meta($post_id, 'rwp_transaction_status', $_POST['rwp_transaction_status']);
+		$status = update_post_meta($transaction_id, 'rwp_transaction_status', $_POST['rwp_transaction_status']);
 
-		update_post_meta($post_id, 'rwp_transaction_user', $_POST['rwp_transaction_user']);
-		update_post_meta($post_id, 'rwp_transaction_object', $_POST['rwp_transaction_object']);
+		update_post_meta($transaction_id, 'rwp_transaction_user', $_POST['rwp_transaction_user']);
+		update_post_meta($transaction_id, 'rwp_transaction_object', $_POST['rwp_transaction_object']);
 
-		if($status != false)
-			reserva_wp_status_change($post_id, $_POST['rwp_transaction_status']);
+		if($status != false) {
+			reserva_wp_status_change($transaction_id, $_POST['rwp_transaction_status'], $_POST['rwp_transaction_object']);
+		}
+			
 	}
 		
 }
 
-function reserva_wp_status_change($post_id, $newstatus) {
+function reserva_wp_status_change($transaction_id, $newstatus, $object_id) {
 
 	$statuses = get_option( 'reserva_wp_transaction_statuses' );
 	$keys = array_keys($statuses);
 
 	if(in_array($newstatus, $keys)) {
-		// This changes the post_status to reflect the reference chosen on setup
-		$postarr = array('ID' => $post_id, 'post_status' => $statuses[$newstatus]['rwp_statusref']);
-		$p = wp_update_post( $postarr, true );
+
+		// Update the object status to reflect changes in transaction
+		$p = wp_update_post( array( 'ID' => $object_id, 'post_status' => $statuses[$newstatus]['rwp_statusref'] ), true );
 
 		if( !is_wp_error( $p ) ) {
 			// Action hook for all status changes
 			// TODO: test!
-			do_action( 'rwp_status_changed', $post_id, $newstatus );
+			do_action( 'rwp_status_changed', $newstatus, $transaction_id, $object_id );
 			// Action hook for specific status changes
 			// takes the form of rwp_status_changed_to_{status_name}
-			do_action( 'rwp_status_changed_to_'.$newstatus, $post_id );
+			do_action( 'rwp_status_changed_to_'.$newstatus, $transaction_id, $object_id );
 		}
 		
+
 	}
 
 }
 
+/**
+* Cria automaticamente a transação quando o usuário cria a listing
+* TODO: anotados
+*/
 function reserva_wp_create_transaction($post_id) {
 
 	global $current_user;
@@ -234,7 +246,7 @@ function reserva_wp_create_transaction($post_id) {
      if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) 
           return;	
 
-	// TODO: ampliar p/ fora do ecotemporadas
+	// TODO: ampliar p/ fora do ecotemporadas (inclusive o hook em add_action)
 	// Somente este post-type
 	if ( 'listing' != $_POST['post_type'] )
 		return;
@@ -251,15 +263,11 @@ function reserva_wp_create_transaction($post_id) {
 	if ( empty($_POST) )
 		return;
 
-	// wp_die(dump($_POST));
-
 	$transaction = array(
-		'post_title' => microtime(),
+		'post_title' => $post_id.'-'.$user.'-'.time(),
 		'post_status' => 'draft',
 		'post_type'	=> 'rwp_transaction'
 	);
-
-	// wp_die($transaction);
 
 	$tid = wp_insert_post( $transaction, true );
 
@@ -271,6 +279,31 @@ function reserva_wp_create_transaction($post_id) {
 		update_post_meta( $tid, 'rwp_transaction_object', $post_id );
 	}
 	
+}
+
+function reserva_wp_email_status_changes($newstatus, $transaction_id, $object_id) {
+
+	wp_die(dump($transaction_id));
+
+	$transaction = get_post( $transaction_id );
+	$object = get_post( $object_id );
+	$user = get_post_meta( $transaction->ID, 'rwp_transaction_user', true );
+	$u = get_userdata( $user );
+
+	// Email message
+	$subject = get_option( 'blogname' ) . ' :: ' . __('Mudança de status do anúncio ') . '"' . $transaction->post_title . '"';
+
+	$message = __("Olá {$u->display_name}\n\n");
+	$message .= __("Seu anúncio {$object->post_title} mudou de status para: \n\n") . strtoupper($newstatus);
+
+	
+	wp_die($subject . ' - ' . $message);
+
+	wp_mail( $u->user_email, $subject, $message, $headers, $attachments );
+
+	
+
+
 }
 
 ?>
