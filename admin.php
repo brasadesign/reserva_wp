@@ -52,10 +52,18 @@ function reserva_wp_admin_scripts() {
 
 	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_validation', plugins_url( '/js/jquery.validate.min.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'rwp_datepicker-ptBR', plugins_url( '/js/jquery.ui.datepicker-pt-BR.js', __FILE__ ), array('jquery') );
+
+	wp_register_style( 'jquery-ui-theme', '//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css' );
 
 	wp_enqueue_script( 'jquery' );
+	wp_enqueue_script( 'jquery-ui-core' );
+	wp_enqueue_script( 'jquery-ui-datepicker' );
+	wp_enqueue_script( 'rwp_datepicker-ptBR' );
 	wp_enqueue_script( 'rwp_validation' );
 	wp_enqueue_script( 'rwp_admin' );
+
+	wp_enqueue_style( 'jquery-ui-theme' );
 
 	wp_localize_script( 'jquery', 'reserva_wp' ,array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 }

@@ -99,6 +99,7 @@ function reserva_wp_transaction_metaboxes_render($post) {
 			<th><label for="rwp_transaction_status"><?php _e('Status da transação', 'reservawp'); ?></label></th>
 			<th><label for="rwp_transaction_user"><?php _e('Usuário da transação', 'reservawp'); ?></label></th>
 			<th><label for="rwp_transaction_object"><?php _e('Objeto da transação', 'reservawp'); ?></label></th>
+			<th><label for="rwp_transaction_object_published_until"><?php _e('Publicado até', 'reservawp'); ?></label></th>
 		</tr>
 		<tr>
 			<td><?php echo $post->ID; ?></td>
@@ -159,12 +160,22 @@ function reserva_wp_transaction_metaboxes_render($post) {
 	}
 
 	echo '</select></td>';	
+
+	$rwp_transaction_object_published_until = get_post_meta( $post->ID, 'rwp_transaction_object_published_until', true );
+
+	echo '<td><input id="datepicker" name="rwp_transaction_object_published_until" value="'.date('d/m/Y', $rwp_transaction_object_published_until).'" /></td>';
 	
 ?>
+
 		</tr>
 	</table>
+	<script>
+	  jQuery(function() {
+	    jQuery( "#datepicker" ).datepicker({ dateFormat: "dd/mm/yy" });
+	  });
+	  </script>
 <?php
-
+	
 	wp_nonce_field( 'rwp_update_transaction', 'rwp_nonce_' );
 	}
 }
@@ -212,6 +223,10 @@ function reserva_wp_save_transaction($transaction_id) {
 
 		update_post_meta($transaction_id, 'rwp_transaction_user', $_POST['rwp_transaction_user']);
 		update_post_meta($transaction_id, 'rwp_transaction_object', $_POST['rwp_transaction_object']);
+
+		$valid = explode('/', esc_attr( $_POST['rwp_transaction_object_published_until'] ) );
+		$valid = strtotime($valid[2].'/'.$valid[1].'/'.$valid[0]);
+		update_post_meta($transaction_id, 'rwp_transaction_object_published_until', $valid);
 			
 	}
 		
