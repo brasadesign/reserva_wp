@@ -2,9 +2,11 @@
 
 add_action( 'init', 'reserva_wp_objects' );
 add_action( 'save_post', 'reserva_wp_save_transaction' );
+add_action( 'updated_post_meta', 'reserva_wp_altered_transaction_meta' );
 // TODO: limpar hook abaixo pra funcionar de forma generica
 add_action( 'save_post_listing', 'reserva_wp_create_transaction' );
-// add_action( 'rwp_status_changed', 'reserva_wp_email_status_changes' );
+add_action( 'rwp_status_changed', 'reserva_wp_email_status_changes' );
+add_action( 'rwp_status_changed_to_liberado', 'reserva_wp_objeto_liberado' );
 
 function reserva_wp_objects() {
 
@@ -18,7 +20,16 @@ function reserva_wp_objects() {
 				'label' => __('Transações', 'reservawp'), 
 				'singular_label' => __('Transação', 'reservawp'), 
 				'supports' => array('title'),
-				'register_meta_box_cb' => 'reserva_wp_transaction_metaboxes'
+				'register_meta_box_cb' => 'reserva_wp_transaction_metaboxes',
+				'capabilities' => array(
+				    'edit_post'          => 'edit_pages',
+				    'read_post'          => 'edit_pages',
+				    'delete_post'        => 'edit_pages',
+				    'edit_posts'         => 'edit_pages',
+				    'edit_others_posts'  => 'edit_pages',
+				    'publish_posts'      => 'edit_pages',
+				    'read_private_posts' => 'edit_pages'
+				),
 		) 
 	);
 
@@ -196,22 +207,42 @@ function reserva_wp_save_transaction($transaction_id) {
 		return;
 
 	if( !empty($_POST) && check_admin_referer( 'rwp_update_transaction', 'rwp_nonce_' ) ) {
+
 		$status = update_post_meta($transaction_id, 'rwp_transaction_status', $_POST['rwp_transaction_status']);
 
 		update_post_meta($transaction_id, 'rwp_transaction_user', $_POST['rwp_transaction_user']);
 		update_post_meta($transaction_id, 'rwp_transaction_object', $_POST['rwp_transaction_object']);
-
-		if($status != false) {
-			reserva_wp_status_change($transaction_id, $_POST['rwp_transaction_status'], $_POST['rwp_transaction_object']);
-		}
 			
 	}
 		
 }
 
-function reserva_wp_status_change($transaction_id, $newstatus, $object_id) {
+/*
+* Distribui as funções e hooks especificos de cada alteração de meta dados da transação
+*/ 
+function reserva_wp_altered_transaction_meta($meta_id) {
+
+	$meta = get_metadata_by_mid( 'post', $meta_id );
+
+	// mudança de status
+	if( "rwp_transaction_status" == $meta->meta_key)
+		reserva_wp_status_change($meta->post_id, $meta->meta_value);
+	
+	// TODO: mudança de usuário
+	// if( "rwp_transaction_user" == $meta->meta_key)
+		// reserva_wp_status_change($meta->post_id, $meta->meta_key, $meta->meta_value);
+
+	// TODO: mudança de objeto
+	// if( "rwp_transaction_object" == $meta->meta_key)
+		// reserva_wp_status_change($meta->post_id, $meta->meta_key, $meta->meta_value);	
+
+
+}
+
+function reserva_wp_status_change($transaction_id, $newstatus) {
 
 	$statuses = get_option( 'reserva_wp_transaction_statuses' );
+	$object_id = get_post_meta( $transaction_id, 'rwp_transaction_object', true );
 	$keys = array_keys($statuses);
 
 	if(in_array($newstatus, $keys)) {
@@ -222,7 +253,8 @@ function reserva_wp_status_change($transaction_id, $newstatus, $object_id) {
 		if( !is_wp_error( $p ) ) {
 			// Action hook for all status changes
 			// TODO: test!
-			do_action( 'rwp_status_changed', $newstatus, $transaction_id, $object_id );
+			// wp_die(dump(array($newstatus, $transaction_id, $object_id)));
+			do_action( 'rwp_status_changed', array($newstatus, $transaction_id, $object_id) );
 			// Action hook for specific status changes
 			// takes the form of rwp_status_changed_to_{status_name}
 			do_action( 'rwp_status_changed_to_'.$newstatus, $transaction_id, $object_id );
@@ -274,6 +306,7 @@ function reserva_wp_create_transaction($post_id) {
 
 	if(!is_wp_error( $tid )) {
 
+		// TODO: dinamizar o status inicial
 		update_post_meta( $tid, 'rwp_transaction_status', 'solicitado' );
 		update_post_meta( $tid, 'rwp_transaction_user', $user );
 		update_post_meta( $tid, 'rwp_transaction_object', $post_id );
@@ -281,12 +314,16 @@ function reserva_wp_create_transaction($post_id) {
 	
 }
 
-function reserva_wp_email_status_changes($newstatus, $transaction_id, $object_id) {
+/*
+* Envia emails genéricos avisando das mudanças de status
+* Roda sempre que uma transação muda de status
+*/
+function reserva_wp_email_status_changes($status) {
 
-	wp_die(dump($transaction_id));
+	$statuses = get_option( 'reserva_wp_transaction_statuses' );
 
-	$transaction = get_post( $transaction_id );
-	$object = get_post( $object_id );
+	$transaction = get_post( $status[1] );
+	$object = get_post( $status[2] );
 	$user = get_post_meta( $transaction->ID, 'rwp_transaction_user', true );
 	$u = get_userdata( $user );
 
@@ -294,16 +331,21 @@ function reserva_wp_email_status_changes($newstatus, $transaction_id, $object_id
 	$subject = get_option( 'blogname' ) . ' :: ' . __('Mudança de status do anúncio ') . '"' . $transaction->post_title . '"';
 
 	$message = __("Olá {$u->display_name}\n\n");
-	$message .= __("Seu anúncio {$object->post_title} mudou de status para: \n\n") . strtoupper($newstatus);
-
-	
-	wp_die($subject . ' - ' . $message);
+	$message .= __("Seu anúncio {$object->post_title} mudou de status para: \n\n") . $statuses[$status[0]]['rwp_statuslabel'];
 
 	wp_mail( $u->user_email, $subject, $message, $headers, $attachments );
 
-	
+}
 
+/*
+* Estipula o prazo de publicação do objeto a partir da liberação
+* Roda sempre que o objeto passa para o status "liberado"
+*/
+function reserva_wp_objeto_liberado($transaction_id, $object_id = false ) {
 
+	$due = time()+60*24*60*60; // 60 dias
+
+	update_post_meta( $transaction_id, 'rwp_transaction_object_published_until', $due );
 }
 
 ?>
