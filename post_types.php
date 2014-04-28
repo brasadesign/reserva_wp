@@ -161,9 +161,16 @@ function reserva_wp_transaction_metaboxes_render($post) {
 
 	echo '</select></td>';	
 
-	$rwp_transaction_object_published_until = get_post_meta( $post->ID, 'rwp_transaction_object_published_until', true );
+	$restrict_date = array('solicitado','revisao','aguardando');
+	if(in_array($transaction_status, $restrict_date))
+		$disable = 'disabled="disabled"';
 
-	echo '<td><input id="datepicker" name="rwp_transaction_object_published_until" value="'.date('d/m/Y', $rwp_transaction_object_published_until).'" /></td>';
+	$rwp_transaction_object_published_until = get_post_meta( $post->ID, 'rwp_transaction_object_published_until', true );
+	$timestamp = '';
+	if($rwp_transaction_object_published_until)
+		$timestamp = date('d/m/Y', (int) $rwp_transaction_object_published_until);
+
+	echo '<td><input '.$disable.' id="datepicker" name="rwp_transaction_object_published_until" value="'.$timestamp.'" /></td>';
 	
 ?>
 
@@ -238,9 +245,10 @@ function reserva_wp_save_transaction($transaction_id) {
 function reserva_wp_altered_transaction_meta($meta_id) {
 
 	$meta = get_metadata_by_mid( 'post', $meta_id );
+	$transaction = get_post( $meta->post_id );
 
 	// mudança de status
-	if( "rwp_transaction_status" == $meta->meta_key)
+	if( "rwp_transaction_status" == $meta->meta_key && 'rwp_transaction' == $transaction->post_type )
 		reserva_wp_status_change($meta->post_id, $meta->meta_value);
 	
 	// TODO: mudança de usuário
@@ -272,7 +280,7 @@ function reserva_wp_status_change($transaction_id, $newstatus) {
 			do_action( 'rwp_status_changed', array($newstatus, $transaction_id, $object_id) );
 			// Action hook for specific status changes
 			// takes the form of rwp_status_changed_to_{status_name}
-			do_action( 'rwp_status_changed_to_'.$newstatus, $transaction_id, $object_id );
+			do_action( 'rwp_status_changed_to_'.$newstatus, array($transaction_id, $object_id) );
 		}
 		
 
@@ -356,11 +364,18 @@ function reserva_wp_email_status_changes($status) {
 * Estipula o prazo de publicação do objeto a partir da liberação
 * Roda sempre que o objeto passa para o status "liberado"
 */
-function reserva_wp_objeto_liberado($transaction_id, $object_id = false ) {
+function reserva_wp_objeto_liberado($transaction) {
 
-	$due = time()+60*24*60*60; // 60 dias
+	$due = get_post_meta( $transaction[0], 'rwp_transaction_object_published_until', true );
 
-	update_post_meta( $transaction_id, 'rwp_transaction_object_published_until', $due );
+	if(!$due) {
+		$due = time()+60*24*60*60; // 60 dias	
+		$u = update_post_meta( $transaction[0], 'rwp_transaction_object_published_until', $due );
+	}
+
+	
+
+	
 }
 
 ?>
