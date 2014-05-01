@@ -31,7 +31,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 											),
 											array( 
 												'key' => 'rwp_transaction_user',
-												'value' => 3
+												'value' => get_current_user_id()
 											) 
 											) ) ) );
 			if($transactions)
@@ -40,7 +40,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 			break;
 
 		default:
-			echo 'oi';
+			// echo 'oi';
 			break;
 	}
 
