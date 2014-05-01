@@ -52,6 +52,9 @@ require_once dirname( __FILE__ ) . '/cron.php';
 // Creates the post types and post statuses
 require_once dirname( __FILE__ ) . '/post_types.php';
 
+register_activation_hook( __FILE__, "reserva_wp_activate" );
+register_activation_hook( __FILE__, 'reserva_wp_cron_job_schedule' );
+
 // Creates the post types and post statuses
 
 // require_once dirname( __FILE__ ) .'/PagSeguroLibrary/searchTransactionByCode.php';

@@ -2,7 +2,6 @@
 
 require_once dirname( __FILE__ ) .'/PagSeguroLibrary/PagSeguroLibrary.php';
 
-register_activation_hook( __FILE__, 'reserva_wp_cron_job_schedule' );
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_expires' );
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_removes' );
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_pagamentos' );

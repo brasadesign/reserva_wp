@@ -1,9 +1,5 @@
 <?php
 
-register_activation_hook( __FILE__, "reserva_wp_activate" );
-
-// reserva_wp_activate();
-
 add_action( 'admin_menu', 'reserva_wp_settings' );
 add_action( 'admin_enqueue_scripts', 'reserva_wp_admin_scripts' );
 add_action( 'wp_ajax_reserva_wp_edit_object', 'reserva_wp_edit_object' );
@@ -374,4 +370,3 @@ function reserva_wp_busca_ultima_transacao( $user_id, $object_id ) {
 }
 
 ?>
-

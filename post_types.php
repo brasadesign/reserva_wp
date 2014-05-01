@@ -34,7 +34,8 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 												'value' => 3
 											) 
 											) ) ) );
-			echo $transactions->ID; 
+			if($transactions)
+				echo $transactions->ID; 
 			echo get_post_type( $post_id );
 			break;
 
@@ -94,7 +95,7 @@ function reserva_wp_objects() {
 
 	else :
 		// Se nenhum objeto foi criado ainda, exiba o objeto de teste
-		$types = $defaults;
+		// $types = $defaults;
 		register_post_type( 'reservawp', 
 			array( 
 				'public' => true,
