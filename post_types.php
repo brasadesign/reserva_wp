@@ -3,10 +3,49 @@
 add_action( 'init', 'reserva_wp_objects' );
 add_action( 'save_post', 'reserva_wp_save_transaction' );
 add_action( 'updated_post_meta', 'reserva_wp_altered_transaction_meta' );
+add_action( 'add_meta_boxes', 'reserva_wp_listing_metabox');
 // TODO: limpar hook abaixo pra funcionar de forma generica
 add_action( 'save_post_listing', 'reserva_wp_create_transaction' );
 add_action( 'rwp_status_changed', 'reserva_wp_email_status_changes' );
 add_action( 'rwp_status_changed_to_liberado', 'reserva_wp_objeto_liberado' );
+
+add_filter( 'manage_listing_posts_columns' , 'reserva_wp_modify_post_table_columns' );
+add_action( 'manage_listing_posts_custom_column', 'reserva_wp_modify_post_table_row', 10, 2 );
+
+function reserva_wp_modify_post_table_columns( $columns ) {
+	return array_merge($columns, 
+        array('transacoes' => __('Transações')));
+}
+
+function reserva_wp_modify_post_table_row($column, $post_id) {
+
+	switch ($column) {
+		case 'transacoes':
+					$transactions = array_shift( get_posts( array( 
+										'post_type' => 'rwp_transaction',
+										'posts_per_page' => 1,
+										'meta_query' => array( 
+											array( 
+												'key' => 'rwp_transaction_object',
+												'value' => $post_id
+											),
+											array( 
+												'key' => 'rwp_transaction_user',
+												'value' => 3
+											) 
+											) ) ) );
+			echo $transactions->ID; 
+			echo get_post_type( $post_id );
+			break;
+
+		default:
+			echo 'oi';
+			break;
+	}
+
+	// return $column;
+
+}
 
 function reserva_wp_objects() {
 
@@ -73,6 +112,28 @@ function reserva_wp_objects() {
 
 	
 }
+
+function reserva_wp_listing_metabox($post) {
+	// Listing meta boxes
+	add_meta_box( 'rwp_listing_booking', __('Agenda', 'reservawp'), 'reserva_wp_listing_calendar_render', 'listing', 'side' );
+
+}
+
+function reserva_wp_listing_calendar_render($post) {
+	echo '<div id="bookingdatepicker"></div><div id="datepicker-inputs"></div>';
+	?>
+
+	<style type="text/css">
+		#bookingdatepicker .ui-state-highlight {
+			border: none;
+		}
+		#bookingdatepicker .ui-state-highlight a {
+			background: #f00;
+		}
+	</style>
+	<?php
+}
+
 
 function reserva_wp_transaction_metaboxes($post) {
 	// Transaction meta boxes

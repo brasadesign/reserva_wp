@@ -52,10 +52,15 @@ require_once dirname( __FILE__ ) . '/cron.php';
 // Creates the post types and post statuses
 require_once dirname( __FILE__ ) . '/post_types.php';
 
+// Creates the post types and post statuses
+
+// require_once dirname( __FILE__ ) .'/PagSeguroLibrary/searchTransactionByCode.php';
+
 // Creates the taxonomies associated to the post_types
 // require_once dirname( __FILE__ ) . '/taxonomies.php';
 
 // Creates the meta boxes for managing object logic
 // require_once dirname( __FILE__ ) . '/meta_boxes.php';
+
 
 ?>

@@ -68,4 +68,35 @@ jQuery(document).ready(function() {
 
 	});
 
+	var allDates = [];
+      jQuery( "#bookingdatepicker" ).multiDatesPicker({
+          numberOfMonths: 1,
+          showButtonPanel: true,
+          minDate: 0, 
+          maxDate: "+6M",
+          
+          onSelect: function(date,datepicker) {
+              thisDate = date.split('/');
+              thisDate = thisDate[2]+'-'+thisDate[0]+'-'+thisDate[1];
+              
+              index = jQuery.inArray(thisDate, allDates);
+              // check if selecting or deselecting
+              if(index != -1) {
+                  allDates.splice(index, 1);
+                      console.log(jQuery('#date-'+thisDate));
+                     jQuery('#date-'+thisDate).remove();
+                 } else {
+                  allDates.push(thisDate);
+                     jQuery('#datepicker-inputs').append('<label id="date-'+thisDate+'" for="date-type-'+thisDate+'">'+thisDate+': <input type="radio" name="date-type-'+thisDate+'" value="ind" checked/>Indisponível <input type="radio" name="date-type-'+thisDate+'" value="oft" />Oferta <br></label>')
+              }
+              
+              jQuery('#dates').val(allDates.join(", "));
+              // console.log(allDates);
+          }
+      });
+
+	  jQuery('#datepicker-inputs input').on('change', function() {
+	  		console.log('change');
+	  });
+
 });

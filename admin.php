@@ -53,6 +53,7 @@ function reserva_wp_admin_scripts() {
 	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_validation', plugins_url( '/js/jquery.validate.min.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_datepicker-ptBR', plugins_url( '/js/jquery.ui.datepicker-pt-BR.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'jquery.multidatespicker', plugins_url( '/js/jquery-ui.multidatespicker.js', __FILE__ ), array('jquery') );
 
 	wp_register_style( 'jquery-ui-theme', '//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css' );
 
@@ -61,6 +62,7 @@ function reserva_wp_admin_scripts() {
 	wp_enqueue_script( 'jquery-ui-datepicker' );
 	wp_enqueue_script( 'rwp_datepicker-ptBR' );
 	wp_enqueue_script( 'rwp_validation' );
+	wp_enqueue_script( 'jquery.multidatespicker' );
 	wp_enqueue_script( 'rwp_admin' );
 
 	wp_enqueue_style( 'jquery-ui-theme' );
@@ -347,5 +349,29 @@ function reserva_wp_list_statuses() {
 	</table>
 <?php
 }
+
+
+/**
+* Busca a última transação relacionada entre um usuário e um objeto
+* TODO: estender para buscar somente por usuario/objeto e outros retornos
+*/
+function reserva_wp_busca_ultima_transacao( $user_id, $object_id ) {
+	$transactions = array_shift( get_posts( array( 
+										'post_type' => 'rwp_transaction',
+										'posts_per_page' => 1,
+										'meta_query' => array( 
+											array( 
+												'key' => 'rwp_transaction_object',
+												'value' => $object_id
+											),
+											array( 
+												'key' => 'rwp_transaction_user',
+												'value' => $user_id
+											) 
+											) ) ) );
+	return $transactions->ID;
+
+}
+
 ?>
 
