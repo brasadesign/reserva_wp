@@ -26,6 +26,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 										'post_status' => 'any',
 										'posts_per_page' => 1,
 										'meta_query' => array( 
+											'relation' => 'AND',
 											array( 
 												'key' => 'rwp_transaction_object',
 												'value' => $post_id
