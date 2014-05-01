@@ -21,7 +21,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 
 	switch ($column) {
 		case 'transacoes':
-					$transactions = array_shift( get_posts( array( 
+					$transactions = get_posts( array( 
 										'post_type' => 'rwp_transaction',
 										'posts_per_page' => 1,
 										'meta_query' => array( 
@@ -33,10 +33,13 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 												'key' => 'rwp_transaction_user',
 												'value' => get_current_user_id()
 											) 
-											) ) ) );
-			if($transactions)
-				echo $transactions->ID; 
-			echo get_post_type( $post_id );
+											) ) );
+			if($transactions) {
+				foreach ($transactions as $t) {
+					echo '<a href="'.admin_url( 'post.php?post='.$t->ID.'&action=edit' ).'" >'.$t->post_title.'</a><br>';
+			} else {
+				echo 'Nenhuma transação encontrada';
+			}
 			break;
 
 		default:
