@@ -23,6 +23,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 		case 'transacoes':
 					$transactions = get_posts( array( 
 										'post_type' => 'rwp_transaction',
+										'post_status' => 'any',
 										'posts_per_page' => 1,
 										'meta_query' => array( 
 											array( 
