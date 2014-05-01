@@ -37,6 +37,7 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 			if($transactions) {
 				foreach ($transactions as $t) {
 					echo '<a href="'.admin_url( 'post.php?post='.$t->ID.'&action=edit' ).'" >'.$t->post_title.'</a><br>';
+				} 
 			} else {
 				echo 'Nenhuma transação encontrada';
 			}
