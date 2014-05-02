@@ -353,6 +353,9 @@
 				this.multiDatesPicker.dates[type] = [];
 				$(this).datepicker('refresh');
 			},
+			refreshDates : function () {
+				$(this).datepicker('refresh');	
+			},
 			toggleDate : function( date, type ) {
 				if(!type) type = 'picked';
 				

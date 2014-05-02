@@ -5,6 +5,7 @@ add_action( 'save_post', 'reserva_wp_save_transaction' );
 add_action( 'updated_post_meta', 'reserva_wp_altered_transaction_meta' );
 add_action( 'add_meta_boxes', 'reserva_wp_listing_metabox');
 // TODO: limpar hook abaixo pra funcionar de forma generica
+add_action( 'save_post_listing', 'reserva_wp_update_object_dates' );
 add_action( 'save_post_listing', 'reserva_wp_create_transaction' );
 add_action( 'rwp_status_changed', 'reserva_wp_email_status_changes' );
 add_action( 'rwp_status_changed_to_liberado', 'reserva_wp_objeto_liberado' );
@@ -34,11 +35,16 @@ function reserva_wp_modify_post_table_row($column, $post_id) {
 											array( 
 												'key' => 'rwp_transaction_user',
 												'value' => get_current_user_id()
-											) 
+											),
+											array( 
+												'key' => 'rwp_transaction_status',
+												'value' => array('aguardando','solicitado','revisao')
+											), 
 											) ) );
 			if($transactions) {
 				foreach ($transactions as $t) {
-					echo '<a href="'.admin_url( 'post.php?post='.$t->ID.'&action=edit' ).'" >'.$t->post_title.'</a><br>';
+					// echo '<a href="'.admin_url( 'post.php?post='.$t->ID.'&action=edit' ).'" >'.$t->post_title.'</a><br>';
+					echo 'ID '.$post_id.'-'.$t->ID;
 				} 
 			} else {
 				echo 'Nenhuma transação encontrada';
@@ -122,20 +128,76 @@ function reserva_wp_objects() {
 
 function reserva_wp_listing_metabox($post) {
 	// Listing meta boxes
-	add_meta_box( 'rwp_listing_booking', __('Agenda', 'reservawp'), 'reserva_wp_listing_calendar_render', 'listing', 'side' );
+	add_meta_box( 'rwp_listing_booking', __('Agenda', 'reservawp'), 'reserva_wp_listing_calendar_render', 'listing', 'side', 'core', array(false) );
+	// add_meta_box( $id, $title, $callback, $screen, $context, $priority, $callback_args );
 
 }
 
 function reserva_wp_listing_calendar_render($post) {
-	echo '<div id="bookingdatepicker"></div><div id="datepicker-inputs"></div>';
+	
+	if(is_admin()) {
+		$dis = false;
+	}
+	if($dis) {
+		$cls = 'front';
+	}
+		
+	$rwp_dates_types = get_post_meta($post->ID, 'rwp_dates_types', true);
+	$ind = array_keys($rwp_dates_types, 'ind');
+	$oft = array_keys($rwp_dates_types, 'oft');
+	$labels = array();
+
+	for($i=0;$i<count($ind);$i++) {
+		$labels[strtotime($ind[$i])] = '<label for="date-type-'.$ind[$i].'" id="date-'.$ind[$i].'">'.$ind[$i].': <input type="radio" checked="" value="ind" name="rwp_date_type['.$ind[$i].']">Indisponível <input type="radio" value="oft" name="rwp_date_type['.$ind[$i].']">Oferta <input type="button" value="x" rel="date-'.$ind[$i].'" /><br></label>';
+		$indisponiveis[$i] = date('D M d Y', strtotime($ind[$i]));
+		$ind[$i] = $ind[$i];		
+	}
+	for($i=0;$i<count($oft);$i++) {
+		$labels[strtotime($oft[$i])] = '<label for="date-type-'.$oft[$i].'" id="date-'.$oft[$i].'">'.$oft[$i].': <input type="radio" value="ind" name="rwp_date_type['.$oft[$i].']">Indisponível <input type="radio" checked="" value="oft" name="rwp_date_type['.$oft[$i].']">Oferta <input type="button" value="x" rel="date-'.$oft[$i].'" /><br></label>';
+		$ofertas[$i] = date('D M d Y', strtotime($oft[$i]));
+		$oft[$i] = $oft[$i];
+	}
+
+	ksort($labels, SORT_NUMERIC);
+
+	$addDates = array_merge($ind,$oft);
+
+
+	echo '<script type="text/javascript">
+			/* <![CDATA[ */
+				var indisponiveis = '.json_encode($indisponiveis).';
+				var ofertas  = '.json_encode($ofertas).';
+				var indDates = '.json_encode($ind).';
+				var oftDates = '.json_encode($oft).';
+				var addDates = '.json_encode($addDates).';
+				 /* > */
+			</script>';
+	echo '<div id="bookingdatepicker" class="'.$cls.'"></div>';
+	
+	if(!$dis) {
+		echo '<div id="datepicker-inputs">'.join("\n",$labels).'</div>';
+	}
+		
 	?>
 
 	<style type="text/css">
 		#bookingdatepicker .ui-state-highlight {
 			border: none;
 		}
-		#bookingdatepicker .ui-state-highlight a {
+		#bookingdatepicker .ui-state-default a, #bookingdatepicker .ui-state-default span {
+			background: #080;
+			color: #fff;
+		}
+		#bookingdatepicker .ui-state-highlight a, #bookingdatepicker .ui-state-highlight span {
 			background: #f00;
+			color: #fff;
+		}
+		#bookingdatepicker .ui-state-highlight.oferta a, #bookingdatepicker .ui-state-highlight.oferta span {
+			background: #ff0;
+			color: #444;
+		}
+		.ui-state-disabled, .ui-widget-content .ui-state-disabled, .ui-widget-header .ui-state-disabled {
+			opacity: 1;
 		}
 	</style>
 	<?php
@@ -354,6 +416,43 @@ function reserva_wp_status_change($transaction_id, $newstatus) {
 
 	}
 
+}
+
+/**
+* Cria / Atualiza as datas de disponibilidade dos objetos
+* TODO: anotados
+*/
+function reserva_wp_update_object_dates($post_id) {
+
+	global $current_user;
+	$user = get_current_user_id();
+
+    // Não é autosave
+     if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) 
+          return;	
+
+	// TODO: ampliar p/ fora do ecotemporadas (inclusive o hook em add_action)
+	// Somente este post-type
+	if ( 'listing' != $_POST['post_type'] )
+		return;
+
+	// Nunca este post-type
+	if ( 'rwp_transaction' == $post->post_type )
+		return;
+
+	// Não é revision
+	if ( wp_is_post_revision( $post_id ) )
+		return;
+
+	// Não é tela vazia
+	if ( empty($_POST) )
+		return;
+
+
+	if(isset($_POST['rwp_date_type'])) {
+		update_post_meta( $post_id, 'rwp_dates_types', $_POST['rwp_date_type'] );
+	}
+	
 }
 
 /**

@@ -46,7 +46,7 @@ function reserva_wp_activate() {
 */
 function reserva_wp_admin_scripts() {
 
-	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js?'.mt_rand(), __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_validation', plugins_url( '/js/jquery.validate.min.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_datepicker-ptBR', plugins_url( '/js/jquery.ui.datepicker-pt-BR.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'jquery.multidatespicker', plugins_url( '/js/jquery-ui.multidatespicker.js', __FILE__ ), array('jquery') );
