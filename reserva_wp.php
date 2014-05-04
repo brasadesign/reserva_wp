@@ -43,8 +43,8 @@ if ( !function_exists( 'add_action' ) ) {
 * Includes
 */
 // Creates the admin screens and the basic transaction logic
-if ( is_admin() )
-	require_once dirname( __FILE__ ) . '/admin.php';
+// if ( is_admin() )
+require_once dirname( __FILE__ ) . '/admin.php';
 
 // Creates the cron schedule
 require_once dirname( __FILE__ ) . '/cron.php';

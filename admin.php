@@ -49,19 +49,21 @@ function reserva_wp_admin_scripts() {
 	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js?'.mt_rand(), __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_validation', plugins_url( '/js/jquery.validate.min.js', __FILE__ ), array('jquery') );
 	wp_register_script( 'rwp_datepicker-ptBR', plugins_url( '/js/jquery.ui.datepicker-pt-BR.js', __FILE__ ), array('jquery') );
-	wp_register_script( 'jquery.multidatespicker', plugins_url( '/js/jquery-ui.multidatespicker.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'jquery.multidatespicker', plugins_url( '/js/jquery-ui.multidatespicker.js?'.mt_rand(), __FILE__ ), array('jquery') );
 
 	wp_register_style( 'jquery-ui-theme', '//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css' );
 
-	wp_enqueue_script( 'jquery' );
-	wp_enqueue_script( 'jquery-ui-core' );
-	wp_enqueue_script( 'jquery-ui-datepicker' );
-	wp_enqueue_script( 'rwp_datepicker-ptBR' );
-	wp_enqueue_script( 'rwp_validation' );
-	wp_enqueue_script( 'jquery.multidatespicker' );
-	wp_enqueue_script( 'rwp_admin' );
+	// if(is_admin() || is_singular('listing')) {
+		wp_enqueue_script( 'jquery' );
+		wp_enqueue_script( 'jquery-ui-core' );
+		wp_enqueue_script( 'jquery-ui-datepicker' );
+		wp_enqueue_script( 'rwp_datepicker-ptBR' );
+		wp_enqueue_script( 'rwp_validation' );
+		wp_enqueue_script( 'jquery.multidatespicker' );
+		wp_enqueue_script( 'rwp_admin' );
 
-	wp_enqueue_style( 'jquery-ui-theme' );
+		wp_enqueue_style( 'jquery-ui-theme' );		
+	// }
 
 	wp_localize_script( 'jquery', 'reserva_wp' ,array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
 }
@@ -354,6 +356,7 @@ function reserva_wp_list_statuses() {
 function reserva_wp_busca_ultima_transacao( $user_id, $object_id ) {
 	$transactions = array_shift( get_posts( array( 
 										'post_type' => 'rwp_transaction',
+										'post_status' => 'any',
 										'posts_per_page' => 1,
 										'meta_query' => array( 
 											array( 
@@ -368,5 +371,28 @@ function reserva_wp_busca_ultima_transacao( $user_id, $object_id ) {
 	return $transactions->ID;
 
 }
+
+function reserva_wp_set_plano() {
+
+	if(!$_POST['ajax'])
+		return;
+
+	$plano = $_POST['plano'];
+	$transacao_id = $_POST['transacao'];
+
+	if($plano && $transacao_id) {
+		update_post_meta( $transacao_id, 'rwp_transaction_plan', $plano );
+
+		$response = array('status' => 'ok');
+	} else {
+		$response = array('status' => 'erro');
+	}
+
+	header( "Content-Type: application/json" );
+    echo json_encode($response);
+    exit;
+
+}
+add_action( 'wp_ajax_reserva_wp_set_plano', 'reserva_wp_set_plano' );
 
 ?>

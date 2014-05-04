@@ -1,4 +1,8 @@
 <?php
+if(!is_admin()) {
+	add_action( 'wp_enqueue_scripts', 'reserva_wp_admin_scripts' );	
+}
+
 
 add_action( 'init', 'reserva_wp_objects' );
 add_action( 'save_post', 'reserva_wp_save_transaction' );
@@ -133,12 +137,15 @@ function reserva_wp_listing_metabox($post) {
 
 }
 
+if(is_singular('listing')) {
+	global $post;
+	add_action('dynamic_sidebar_before', reserva_wp_listing_calendar_render($post));
+}
+
+
 function reserva_wp_listing_calendar_render($post) {
 	
-	if(is_admin()) {
-		$dis = false;
-	}
-	if($dis) {
+	if(!is_admin()) {
 		$cls = 'front';
 	}
 		
@@ -162,6 +169,14 @@ function reserva_wp_listing_calendar_render($post) {
 
 	$addDates = array_merge($ind,$oft);
 
+	if(!$rwp_dates_types) {
+		$indisponiveis = array();
+		$ofertas = array();
+		$ind = array();
+		$oft = array();
+		$addDates = array();
+
+	}
 
 	echo '<script type="text/javascript">
 			/* <![CDATA[ */
@@ -174,7 +189,7 @@ function reserva_wp_listing_calendar_render($post) {
 			</script>';
 	echo '<div id="bookingdatepicker" class="'.$cls.'"></div>';
 	
-	if(!$dis) {
+	if(is_admin()) {
 		echo '<div id="datepicker-inputs">'.join("\n",$labels).'</div>';
 	}
 		
@@ -373,7 +388,6 @@ function reserva_wp_save_transaction($transaction_id) {
 * Distribui as funções e hooks especificos de cada alteração de meta dados da transação
 */ 
 function reserva_wp_altered_transaction_meta($meta_id) {
-
 	$meta = get_metadata_by_mid( 'post', $meta_id );
 	$transaction = get_post( $meta->post_id );
 
@@ -393,7 +407,7 @@ function reserva_wp_altered_transaction_meta($meta_id) {
 }
 
 function reserva_wp_status_change($transaction_id, $newstatus) {
-
+	
 	$statuses = get_option( 'reserva_wp_transaction_statuses' );
 	$object_id = get_post_meta( $transaction_id, 'rwp_transaction_object', true );
 	$keys = array_keys($statuses);
@@ -411,9 +425,14 @@ function reserva_wp_status_change($transaction_id, $newstatus) {
 			// Action hook for specific status changes
 			// takes the form of rwp_status_changed_to_{status_name}
 			do_action( 'rwp_status_changed_to_'.$newstatus, array($transaction_id, $object_id) );
+			wp_die('status_changed');
+		} else {
+			wp_die(var_dump($p));
 		}
 		
 
+	} else {
+		wp_die(var_dump($newstatus));
 	}
 
 }
@@ -533,16 +552,31 @@ function reserva_wp_email_status_changes($status) {
 */
 function reserva_wp_objeto_liberado($transaction) {
 
-	$due = get_post_meta( $transaction[0], 'rwp_transaction_object_published_until', true );
+	$plano = get_post_meta( $transaction[0], 'rwp_transaction_plan', true );
+	// $due = get_post_meta( $transaction[0], 'rwp_transaction_object_published_until', true );
+	
+	switch ($plano) {
+		case 'pgtotrimestral':
+			$due = time()+90*24*60*60; // 90 dias	
+			break;
+		case 'pgtosemestral':
+			$due = time()+180*24*60*60; // 180 dias	
+			break;
+		case 'pgtoanual':
+			$due = time()+365*24*60*60; // 365 dias	
+			break;			
+		
+		default:
+			$due = time()+90*24*60*60; // 90 dias	
+			break;
+	}
 
+	$u = update_post_meta( $transaction[0], 'rwp_transaction_object_published_until', $due );
+	/*
 	if(!$due) {
 		$due = time()+60*24*60*60; // 60 dias	
 		$u = update_post_meta( $transaction[0], 'rwp_transaction_object_published_until', $due );
+		*/
 	}
-
-	
-
-	
-}
 
 ?>

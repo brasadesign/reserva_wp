@@ -8,11 +8,12 @@ if($_GET['pag']) {
 
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_expires' );
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_removes' );
-add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_pagamentos' );
+add_action( 'reserva_wp_cron_hourly_hook', 'reserva_wp_cron_check_pagamentos' );
 
 // Roda uma vez na ativação, agendando o cron
 function reserva_wp_cron_job_schedule() {
 	wp_schedule_event( time(), 'daily', 'reserva_wp_cron_daily_hook' );
+	wp_schedule_event( time(), 'hourly', 'reserva_wp_cron_hourly_hook' );
 }
 
 // Busca posts liberados com prazo de vencimento inferior a 30 dias
@@ -98,8 +99,8 @@ function reserva_wp_cron_check_pagamentos() {
 	);  
 
 	$transactions = get_posts( array( 'post_type' => 'rwp_transaction', 
-									  'meta_key' =>	'rwp_transaction_status',
-									  'meta_value' => 'aguardando',
+									  //'meta_key' =>	'rwp_transaction_status',
+									  // 'meta_value' => 'aguardando',
 									  'posts_per_page' => -1,
 									  'date_query' => array( array( 
 									  	'column' => 'post_modified_gmt',
@@ -125,7 +126,7 @@ function reserva_wp_cron_check_pagamentos() {
 			$tids[$row['Referencia']] = $row['TransacaoID'];
 		}		
 	}
-
+	$tids['ID 3207-3210'] = '699C3682-44B8-4110-93A7-4E55A61D58BC'; // teste Andre
 	
 	$statuses = array();
 
@@ -137,28 +138,36 @@ function reserva_wp_cron_check_pagamentos() {
 		*/   
 		try {
 			$transaction = PagSeguroTransactionSearchService::searchByCode( $credentials, $value );  
-			$status = $transaction->getStatus();  
+			$status = $transaction->getStatus()->getValue();
 			$intTrans = explode('-', $key);
 
 			if($status < 3) { // 1 == aguardando / 2 == análise
-				update_post_meta( $intTrans[1], 'rwp_transaction_status', 'aguardando' );
+				
+				$msg = 'aguardando';
 			}
 			if(3 == $status || 4 == $status) { // 3 == pago / 4 == disponivel
-				update_post_meta( $intTrans[1], 'rwp_transaction_status', 'liberado' );
+				
+				$msg = 'liberado';
 			}
 			if($status > 4) { // 5 == disputa / 6 == devolvida / 7 == cancelada
-				update_post_meta( $intTrans[1], 'rwp_transaction_status', 'retirado' );
+				
+				$msg = 'retirado';
 			}
 
+			require_once dirname( __FILE__ ) . '/post_types.php';
+			$meta_id = update_post_meta( $intTrans[1], 'rwp_transaction_status', $msg );
+			
+
 		} catch (PagSeguroServiceException $e) {
-			// echo '<pre>'; var_dump($e); echo '</pre>';
-            $status = $e->getMessage();
+			echo '<pre>'; var_dump($e); echo '</pre>';
+            $msg = $status = $e->getMessage();
         }
 		
-		$statuses[$intTrans[1]] = $status;
+		$statuses[$value] = array('status' => $status, 'rwp_transaction' => $intTrans[1], 'msg' => $msg );
 	}
 	endif;
 
+	// var_dump($statuses);
 }
 
 ?>
