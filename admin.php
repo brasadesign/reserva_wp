@@ -18,8 +18,8 @@ function reserva_wp_activate() {
 	if(!$reserva_wp_transaction_statuses) {
 		$default_transaction_statuses = array(
 			'solicitado'	=> array( 'rwp_name' => 'solicitado',	'rwp_statuslabel' => 'Solicitado', 				'rwp_statusref'	=> 'draft',		'rwp_description' => 'Solicitado' ),
-			'revisao' 		=> array( 'rwp_name' => 'revisao',		'rwp_statuslabel' => 'Em revisão', 				'rwp_statusref'	=> 'draft',		'rwp_description' => 'Em revisão' ),
-			'aguardando'	=> array( 'rwp_name' => 'aguardando',	'rwp_statuslabel' => 'Aguardando Pagamento',	'rwp_statusref'	=> 'draft',		'rwp_description' => 'Aguardando Pagamento' ),
+			'revisao' 		=> array( 'rwp_name' => 'revisao',		'rwp_statuslabel' => 'Em revisão', 				'rwp_statusref'	=> 'pending',		'rwp_description' => 'Em revisão' ),
+			'aguardando'	=> array( 'rwp_name' => 'aguardando',	'rwp_statuslabel' => 'Aguardando Pagamento',	'rwp_statusref'	=> 'private',	'rwp_description' => 'Aguardando Pagamento' ),
 			'liberado' 		=> array( 'rwp_name' => 'liberado',		'rwp_statuslabel' => 'Liberado',				'rwp_statusref'	=> 'publish',	'rwp_description' => 'Liberado' ),
 			'expirando' 	=> array( 'rwp_name' => 'expirando',	'rwp_statuslabel' => 'Expirando',				'rwp_statusref'	=> 'publish',	'rwp_description' => 'Expirando' ),
 			'retirado' 		=> array( 'rwp_name' => 'retirado',		'rwp_statuslabel' => 'Retirado',				'rwp_statusref'	=> 'private',	'rwp_description' => 'Retirado' )

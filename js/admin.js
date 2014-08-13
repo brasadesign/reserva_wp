@@ -70,18 +70,42 @@ jQuery(document).ready(function() {
 
 	});
 
+	// Actions on the delete object button
+	jQuery('input[type="image"]').on('click', function() {
+
+		idents = jQuery(this).attr('class');
+		thing = jQuery(this).attr('rel');
+		
+		jQuery.post(reserva_wp.ajaxurl, {
+			action: 'reserva_wp_set_plano',
+			plano: idents,
+			transacao: thing,
+			ajax: true
+		},
+		function(response) {
+			
+			if(response.status == 'ok') {
+				// plano selecionado
+			}
+				
+		});
+
+		
+	});
+
+
 	if(jQuery( "#bookingdatepicker" ).exists()) {
 
 		if(jQuery( "#bookingdatepicker" ).hasClass('front')) {
-	 	front = true;
-	 	disabled = true;
-	 	numMonths = 6,
-	 	button = false;
-	 } else {
-	 	disabled = false;
-	 	numMonths = 1,
-	 	button = true;
-	 }
+		 	front = true;
+		 	disabled = true;
+		 	numMonths = 6,
+		 	button = false;
+		 } else {
+		 	disabled = false;
+		 	numMonths = 1,
+		 	button = true;
+		 }
 
 	 aDates = [];
 	 var date;
@@ -89,16 +113,42 @@ jQuery(document).ready(function() {
 	 	date = v.split('-');
 	 	aDates.push(new Date(date[0],parseInt(date[1])-1,date[2]));
 	 });
-	 // console.log(aDates);
 
-     jQuery( "#bookingdatepicker" ).multiDatesPicker({
+     jQuery( "#bookingdatepicker.front" ).multiDatesPicker({
      	  // resetDates: 'disabled',
-     	  addDates: getDates(),
-          numberOfMonths: numMonths,
-          disabled: disabled,
+     	  // addDates: getDates(),
+          numberOfMonths: 3,
+          disabled: true,
           showButtonPanel: false,
           minDate: 0, 
-          maxDate: "+6M",
+          maxDate: "+12M",
+          beforeShowDay: function(date) {
+            
+          	d = date.toString().substr(0,15);
+          	cls = "ui-state-default";
+          	classdate = d.replace(' ','_');
+
+          	if(jQuery.inArray(d, ofertas) > -1) {
+          		cls = 'ui-state-highlight oferta';
+          		
+          	}
+          	if(jQuery.inArray(d, indisponiveis) > -1) {
+          		cls = 'ui-state-highlight';
+          	}
+
+          	// console.log(cls);
+
+          	return [true, cls, false]
+          }
+      });
+
+     jQuery( "#bookingdatepicker" ).not('.front').multiDatesPicker({
+     	  // resetDates: 'disabled',
+     	  addDates: getDates(),
+          numberOfMonths: 1,
+          showButtonPanel: false,
+          minDate: 0, 
+          maxDate: "+12M",
           beforeShowDay: function(date) {
             
           	d = date.toString().substr(0,15);
@@ -149,8 +199,6 @@ jQuery(document).ready(function() {
 	  		date = jQuery(this).attr('name').slice(14,-1);
 	  		val  = jQuery(this).val();
 
-	  		console.log(date);
-
 	  		if('oft' == val)
 	  			addToLists('ofertas', date);
 
@@ -162,8 +210,6 @@ jQuery(document).ready(function() {
 
 	  		name = jQuery(this).attr('rel');
 	  		date = name.slice(5);
-
-	  		console.log(name+' '+date);
 	  		jQuery('#'+name).remove();
 	  		removeFromLists(date);
 
@@ -213,7 +259,6 @@ function addToLists(to, date) {
 	 	aDates.push(new Date(d[0],parseInt(d[1])-1,d[2]));
 	});
 
-	console.log(aDates.length);
 	jQuery( "#bookingdatepicker" ).datepicker('refresh');
 
 	return false;
@@ -245,11 +290,6 @@ function removeFromLists(date) {
 	 	d = v.split('-');
 	 	aDates.push(new Date(d[0],parseInt(d[1])-1,d[2]));
 	});
-
-	console.log(date + indDates);
-	console.log(date+' | '+dateF+' | '+indexOf+' | '+indexIn+' | '+indexD1+' | '+indexD2);
-	console.log(aDates.length);
-
 
 	jQuery( "#bookingdatepicker" ).datepicker('refresh');
 

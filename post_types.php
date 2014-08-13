@@ -7,7 +7,7 @@ if(!is_admin()) {
 add_action( 'init', 'reserva_wp_objects' );
 add_action( 'save_post', 'reserva_wp_save_transaction' );
 add_action( 'updated_post_meta', 'reserva_wp_altered_transaction_meta' );
-add_action( 'add_meta_boxes', 'reserva_wp_listing_metabox');
+//add_action( 'add_meta_boxes', 'reserva_wp_listing_metabox');
 // TODO: limpar hook abaixo pra funcionar de forma generica
 add_action( 'save_post_listing', 'reserva_wp_update_object_dates' );
 add_action( 'save_post_listing', 'reserva_wp_create_transaction' );
@@ -133,7 +133,7 @@ function reserva_wp_objects() {
 function reserva_wp_listing_metabox($post) {
 	// Listing meta boxes
 	add_meta_box( 'rwp_listing_booking', __('Agenda', 'reservawp'), 'reserva_wp_listing_calendar_render', 'listing', 'side', 'core', array(false) );
-	// add_meta_box( $id, $title, $callback, $screen, $context, $priority, $callback_args );
+	add_meta_box( $id, $title, $callback, $screen, $context, $priority, $callback_args );
 
 }
 
@@ -144,6 +144,7 @@ if(is_singular('listing')) {
 
 
 function reserva_wp_listing_calendar_render($post) {
+	
 	
 	if(!is_admin()) {
 		$cls = 'front';

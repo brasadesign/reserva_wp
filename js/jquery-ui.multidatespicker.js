@@ -473,7 +473,7 @@
 	//$.multiDatesPicker = new MultiDatesPicker(); // singleton instance
 	$.multiDatesPicker.initialized = false;
 	$.multiDatesPicker.uuid = new Date().getTime();
-	$.multiDatesPicker.version = $.ui.multiDatesPicker.version;
+	// $.multiDatesPicker.version = $.ui.multiDatesPicker.version;
 
 	// Workaround for #4055
 	// Add another global to avoid noConflict issues with inline event handlers

@@ -83,10 +83,15 @@ function reserva_wp_cron_check_pagamentos() {
 
 	/* Banco Pagseguro */    
 	$DB_TYPE="mysql";
-	$retorno_host = 'localhost'; // Local da base de dados MySql
-	$retorno_database = 'ecotempo_main'; // Nome da base de dados MySql
-	$retorno_usuario = 'ecotempo'; // Usuario com acesso a base de dados MySql 
-	$retorno_senha = 'J3eWlq929b';  // Senha de acesso a base de dados MySql
+	//$retorno_host = 'localhost'; // Local da base de dados MySql
+	//$retorno_database = 'ecotempo_main'; // Nome da base de dados MySql
+	//$retorno_usuario = 'ecotempo_admin'; // Usuario com acesso a base de dados MySql 
+	//$retorno_senha = 'ZpaK}GN5ni({';  // Senha de acesso a base de dados MySql
+
+	$retorno_host = '186.202.152.99'; // Local da base de dados MySql
+	$retorno_database = 'temporadas1'; // Nome da base de dados MySql
+	$retorno_usuario = 'temporadas1'; // Usuario com acesso a base de dados MySql
+	$retorno_senha = 'hu4wuOg5vv';  // Senha de acesso a base de dados MySql
 
 	$mysqli = new mysqli($retorno_host, $retorno_usuario, $retorno_senha, $retorno_database);
 	if($mysqli->connect_errno)
