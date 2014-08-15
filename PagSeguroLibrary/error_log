@@ -1,0 +1,1 @@
+[02-May-2014 20:02:25 Europe/London] PHP Fatal error:  Class 'PagSeguroAccountCredentials' not found in /home/ecotempo/public_html/wp-content/plugins/reserva_wp/PagSeguroLibrary/searchTransactionByCode.php on line 36
