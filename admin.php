@@ -86,7 +86,7 @@ function reserva_wp_settings() {
 }
 
 /**
-* Create / edit objects function
+* Create / edit objects functions
 * TODO: front-end validation
 */
 function reserva_wp_edit_object($post) {
@@ -384,6 +384,7 @@ function reserva_wp_set_plano() {
 	$transacao_id = $_POST['transacao'];
 
 	if($plano && $transacao_id) {
+
 		update_post_meta( $transacao_id, 'rwp_transaction_plan', $plano );
 
 		$response = array('status' => 'ok');

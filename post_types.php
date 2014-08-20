@@ -520,6 +520,9 @@ function reserva_wp_create_transaction($post_id) {
 		update_post_meta( $tid, 'rwp_transaction_status', 'solicitado' );
 		update_post_meta( $tid, 'rwp_transaction_user', $user );
 		update_post_meta( $tid, 'rwp_transaction_object', $post_id );
+		update_post_meta( $post_id, 'rwp_transaction_id', $tid );
+
+
 	}
 	
 }
