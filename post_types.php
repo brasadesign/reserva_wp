@@ -1,6 +1,30 @@
 <?php
-if(!is_admin()) {
+function reserva_wp_front_scripts(){
+	wp_register_script( 'rwp_admin', plugins_url( '/js/admin.js?'.mt_rand(), __FILE__ ), array('jquery') );
+	wp_register_script( 'rwp_date_front', plugins_url( '/js/date-front.js?'.mt_rand(), __FILE__ ), array('jquery') );
+
+	wp_register_script( 'rwp_validation', plugins_url( '/js/jquery.validate.min.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'rwp_datepicker-ptBR', plugins_url( '/js/jquery.ui.datepicker-pt-BR.js', __FILE__ ), array('jquery') );
+	wp_register_script( 'jquery.multidatespicker', plugins_url( '/js/jquery-ui.multidatespicker.js?', __FILE__ ), array('jquery') );
+
+	wp_register_style( 'jquery-ui-theme', '//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css' );
+	wp_localize_script( 'jquery', 'reserva_wp' ,array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+	wp_enqueue_script( 'jquery' );
+	wp_enqueue_script( 'jquery-ui-core' );
+	wp_enqueue_script( 'jquery-ui-datepicker' );
+	wp_enqueue_script( 'rwp_datepicker-ptBR' );
+	wp_enqueue_script( 'rwp_validation' );
+	wp_enqueue_script( 'jquery.multidatespicker' );
+	wp_enqueue_script( 'rwp_admin' );
+	//wp_enqueue_script( 'rwp_date_front' );
+
+	wp_enqueue_style( 'jquery-ui-theme' );
+}
+if(is_admin()) {
 	add_action( 'wp_enqueue_scripts', 'reserva_wp_admin_scripts' );	
+}
+else{
+	add_action( 'wp_enqueue_scripts', 'reserva_wp_front_scripts' );
 }
 
 
@@ -146,9 +170,9 @@ if(is_singular('listing')) {
 function reserva_wp_listing_calendar_render($post) {
 	
 	
-	if(!is_admin()) {
-		$cls = 'front';
-	}
+	//if(!is_admin()) {
+	//	$cls = 'front';
+	//}
 		
 	$rwp_dates_types = get_post_meta($post->ID, 'rwp_dates_types', true);
 	$ind = array_keys($rwp_dates_types, 'ind');
@@ -190,9 +214,9 @@ function reserva_wp_listing_calendar_render($post) {
 			</script>';
 	echo '<div id="bookingdatepicker" class="'.$cls.'"></div>';
 	
-	if(is_admin()) {
+	//if(is_admin()) {
 		echo '<div id="datepicker-inputs">'.join("\n",$labels).'</div>';
-	}
+	//}
 		
 	?>
 
@@ -217,6 +241,96 @@ function reserva_wp_listing_calendar_render($post) {
 		}
 	</style>
 	<?php
+}
+function reserva_wp_listing_calendar_render_front($post) {
+
+
+	//$cls = 'front';
+
+	$rwp_dates_types = get_post_meta($post->ID, 'rwp_dates_types', true);
+	$ind = array_keys($rwp_dates_types, 'ind');
+	$oft = array_keys($rwp_dates_types, 'oft');
+	$labels = array();
+
+	for($i=0;$i<count($ind);$i++) {
+		$labels[strtotime($ind[$i])] = '<label for="date-type-'.$ind[$i].'" id="date-'.$ind[$i].'">'.$ind[$i].': <input type="radio" checked="" value="ind" name="rwp_date_type['.$ind[$i].']">Indisponível <input type="radio" value="oft" name="rwp_date_type['.$ind[$i].']">Oferta <input type="button" value="x" rel="date-'.$ind[$i].'" /><br></label>';
+		$indisponiveis[$i] = date('D M d Y', strtotime($ind[$i]));
+		$ind[$i] = $ind[$i];
+	}
+	for($i=0;$i<count($oft);$i++) {
+		$labels[strtotime($oft[$i])] = '<label for="date-type-'.$oft[$i].'" id="date-'.$oft[$i].'">'.$oft[$i].': <input type="radio" value="ind" name="rwp_date_type['.$oft[$i].']">Indisponível <input type="radio" checked="" value="oft" name="rwp_date_type['.$oft[$i].']">Oferta <input type="button" value="x" rel="date-'.$oft[$i].'" /><br></label>';
+		$ofertas[$i] = date('D M d Y', strtotime($oft[$i]));
+		$oft[$i] = $oft[$i];
+	}
+
+	ksort($labels, SORT_NUMERIC);
+
+	$addDates = array_merge($ind,$oft);
+
+	if(!$rwp_dates_types) {
+		$indisponiveis = array();
+		$ofertas = array();
+		$ind = array();
+		$oft = array();
+		$addDates = array();
+
+	}
+
+	echo '<script type="text/javascript">
+			/* <![CDATA[ */
+				indisponiveis = '.json_encode($indisponiveis).';
+				ofertas  = '.json_encode($ofertas).';
+				indDates = '.json_encode($ind).';
+				oftDates = '.json_encode($oft).';
+				addDates = '.json_encode($addDates).';
+				 /* > */
+			</script>';
+	echo '<div id="bookingdatepicker" data-front="true" class="front"></div>';
+
+	//if(is_admin()) {
+	//echo '<div id="datepicker-inputs">'.join("\n",$labels).'</div>';
+	//}
+
+	?>
+
+	<style type="text/css">
+		#bookingdatepicker .ui-state-highlight {
+			border: none;
+		}
+		#bookingdatepicker td{
+			pointer-events: none;
+		}
+		#bookingdatepicker .ui-state-default a, #bookingdatepicker .ui-state-default span {
+			background: #080;
+			color: #fff;
+			pointer-events: none;
+		}
+		#bookingdatepicker .ui-state-highlight a, #bookingdatepicker .ui-state-highlight span {
+			background: #f00;
+			color: #fff;
+		}
+		#bookingdatepicker .ui-state-highlight.oferta a, #bookingdatepicker .ui-state-highlight.oferta span {
+			background: #ff0;
+			color: #444;
+		}
+		.ui-state-disabled, .ui-widget-content .ui-state-disabled, .ui-widget-header .ui-state-disabled {
+			opacity: 1;
+		}
+		#bookingdatepicker .ui-state-disabled{
+			opacity:0.40;
+		}
+		#bookingdatepicker .ui-datepicker-unselectable.ui-state-disabled.ui-state-highlight, #bookingdatepicker .ui-datepicker-unselectable .ui-state-disabled{
+			opacity:0.99;
+		}
+		#bookingdatepicker .ui-datepicker-unselectable.ui-state-disabled.ui-state-highlight span, #bookingdatepicker .ui-datepicker-unselectable .ui-state-disabled span{
+			opacity:0.99;
+			background: #ff0;
+			color: #444;
+		}
+
+
+	</style>
+<?php
 }
 
 
