@@ -12,7 +12,13 @@ if ( $_GET['pagseguronotification'] ) {
 if ( $_GET['update_post_cron'] ) {
 	add_action( 'init', 'reserva_wp_update_post_cron', 9999999999999999999999999 );
 }
+//add_action( 'init', 'teste_emails', 9999999999999999999999999 );
 
+function teste_emails() {
+	$opt = get_option( 'rwp_options' );
+	var_dump( $opt );
+	//die();
+}
 
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_expires' );
 add_action( 'reserva_wp_cron_daily_hook', 'reserva_wp_cron_check_removes' );
@@ -24,10 +30,10 @@ function reserva_wp_update_post_cron() {
 	echo 'now:' . $now;
 	// WP_Query arguments
 	$transactions = get_posts( array(
-		'post_type' => 'rwp_transaction',
+		'post_type'   => 'rwp_transaction',
 		'post_status' => 'any',
-		'meta_key'   => 'rwp_transaction_expire_date',
-		'meta_value' => $now,
+		'meta_key'    => 'rwp_transaction_expire_date',
+		'meta_value'  => $now,
 	) );
 	$contador     = 0;
 
@@ -40,24 +46,25 @@ function reserva_wp_update_post_cron() {
 			$meta_day = get_post_meta( $t->ID, 'rwp_transaction_expire_date', true );
 			echo '<br>Meta:' . $meta_day . '<br>';
 			update_post_meta( $t->ID, 'rwp_transaction_status', $newstatus );
-			$wpdb->update($wpdb->posts, array('post_status' => 'private'), array('id' => $post_id));
-			$post_autor = get_post($post_id);
-			$post_autor_mail = get_the_author_meta('user_email',$post_autor->post_author);
+			$wpdb->update( $wpdb->posts, array( 'post_status' => 'private' ), array( 'id' => $post_id ) );
+			$post_autor      = get_post( $post_id );
+			$post_autor_mail = get_the_author_meta( 'user_email', $post_autor->post_author );
 
 			//$email = $post_autor_mail;
 			// Return a boolean!
 			//editar email
-			$to = $post_autor_mail;
-			$subject = 'Mudança de status no anuncio "'.$post_autor->post_title.'" ';
-			$message = 'O status do seu anuncio mudou para: vencido/retirado' ;
-			$message .= '- Faça o pagamento para reestabelecer seu anuncio';
-			$from = 'no-reply@ecotemporadas.com';
-			$headers = 'From:' . $from.'\n';
-			$headers .= 'Content-type: text/html';
+			$from    = 'no-reply@ecotemporadas.com';
+			$opt = get_option( 'rwp_options' );
+			$to      = $post_autor_mail;
+			$subject = shortcode_emails($opt['rwp_email_vencido_title'],$post_id);
+			$message = shortcode_emails($opt['rwp_email_vencido'],$post_id);
+			$headers = 'MIME-Version: 1.0' . "\r\n";
+			$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+			$headers .= 'From: ' . get_bloginfo( 'name' ) . '' . ' <' . $from . '>' . "\r\n";
 
-			if($to && $subject && $message && $headers) {
-				wp_mail($to,$subject,$message,$headers);
-				echo $to.' - '.$subject.' - '.$message.' - '.$headers;
+			if ( $to && $subject && $message && $headers ) {
+				wp_mail( $to, $subject, $message, $headers );
+				echo $to . ' - ' . $subject . ' - ' . $message . ' - ' . $headers;
 			}
 			//do_action( 'rwp_status_changed', $newstatus, $t->ID, $object_id );
 			//do_action( 'rwp_status_changed_to_' . $newstatus, $t->ID, $object_id );
@@ -72,12 +79,12 @@ function reserva_wp_update_post_cron() {
 	//$now = (string) $date->format( 'd-m-Y' );
 	echo 'now:' . $now;
 	$transactions_pre = get_posts( array(
-		'post_type' => 'rwp_transaction',
+		'post_type'   => 'rwp_transaction',
 		'post_status' => 'any',
-		'meta_key'   => 'rwp_transaction_pre_expire_date',
-		'meta_value' => $now,
+		'meta_key'    => 'rwp_transaction_pre_expire_date',
+		'meta_value'  => $now,
 	) );
-	$contador     = 0;
+	$contador         = 0;
 
 	if ( $transactions_pre ) {
 		foreach ( $transactions_pre as $t ) {
@@ -88,22 +95,23 @@ function reserva_wp_update_post_cron() {
 			$meta_day = get_post_meta( $t->ID, 'rwp_transaction_pre_expire_date', true );
 			echo '<br>Meta:' . $meta_day . '<br>';
 			//update_post_meta( $t->ID, 'rwp_transaction_status', $newstatus );
-			$wpdb->update($wpdb->posts, array('post_status' => 'expirando'), array('id' => $post_id));
-			$post_autor = get_post($post_id);
-			$post_autor_mail = get_the_author_meta('user_email',$post_autor->post_author);
+			$wpdb->update( $wpdb->posts, array( 'post_status' => 'expirando' ), array( 'id' => $post_id ) );
+			$post_autor      = get_post( $post_id );
+			$post_autor_mail = get_the_author_meta( 'user_email', $post_autor->post_author );
 
 			//editar email
-			$to = $post_autor_mail;
-			$subject = 'Mudança de status no anuncio "'.$post_autor->post_title.'" ';
-			$message = 'Seu anuncio '. "'.$post_autor->post_title.'".' vence nos proximos 10 dias' ;
-			$message .= '- Faça o pagamento o mais rápido possivel';
-			$from = 'no-reply@ecotemporadas.com';
-			$headers = 'From:' . $from.'';
-			$headers .= 'Content-type: text/html';
+			$from    = 'no-reply@ecotemporadas.com';
+			$opt = get_option( 'rwp_options' );
+			$to      = $post_autor_mail;
+			$subject = shortcode_emails($opt['rwp_email_pre_vencido_title'],$post_id);
+			$message = shortcode_emails($opt['rwp_email_pre_vencido'],$post_id);
+			$headers = 'MIME-Version: 1.0' . "\r\n";
+			$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+			$headers .= 'From: ' . get_bloginfo( 'name' ) . '' . ' <' . $from . '>' . "\r\n";
 
-			if($to && $subject && $message && $headers) {
-				wp_mail($to,$subject,$message,$headers);
-				echo $to.' - '.$subject.' - '.$message.' - '.$headers;
+			if ( $to && $subject && $message && $headers ) {
+				wp_mail( $to, $subject, $message, $headers );
+				echo $to . ' - ' . $subject . ' - ' . $message . ' - ' . $headers;
 			}
 			//do_action( 'rwp_status_changed', $newstatus, $t->ID, $object_id );
 			//do_action( 'rwp_status_changed_to_' . $newstatus, $t->ID, $object_id );
@@ -189,120 +197,15 @@ function reserva_wp_cron_check_removes() {
 }
 
 
-// Chama a API do Pagseguro pra confirmar os pagamentos
-function reserva_wp_cron_check_pagamentos() {
-
-	require_once dirname( __FILE__ ) . '/PagSeguroLibrary/PagSeguroLibrary.php';
-
-	/* Banco Pagseguro */
-	$DB_TYPE = "mysql";
-	//$retorno_host = 'localhost'; // Local da base de dados MySql
-	//$retorno_database = 'ecotempo_main'; // Nome da base de dados MySql
-	//$retorno_usuario = 'ecotempo_admin'; // Usuario com acesso a base de dados MySql
-	//$retorno_senha = 'ZpaK}GN5ni({';  // Senha de acesso a base de dados MySql
-
-	$retorno_host     = 'localhost'; // Local da base de dados MySql
-	$retorno_database = 'eco'; // Nome da base de dados MySql
-	$retorno_usuario  = 'eco'; // Usuario com acesso a base de dados MySql
-	$retorno_senha    = 'acdc1980bs';  // Senha de acesso a base de dados MySql
-
-	$mysqli = new mysqli( $retorno_host, $retorno_usuario, $retorno_senha, $retorno_database );
-	if ( $mysqli->connect_errno ) {
-		die ( 'Nao foi possível conectar ao MySql: ' . $mysqli->connect_errno );
-	}
-
-	/* Definindo as credenciais  */
-	$credentials = new PagSeguroAccountCredentials(
-		'contato@matheusgimenez.com.br',
-		'81045E8D0399448E970C11732E435C2D'
-	);
-
-	$transactions = get_posts( array(
-		'post_type'      => 'rwp_transaction',
-		//'meta_key' =>	'rwp_transaction_status',
-		// 'meta_value' => 'aguardando',
-		'posts_per_page' => - 1,
-		'date_query'     => array(
-			array(
-				'column'    => 'post_modified_gmt',
-				'after'     => '30 days ago',
-				'inclusive' => true
-			)
-		)
-	) );
-
-
-	foreach ( $transactions as $t ) {
-		$obj  = get_post_meta( $t->ID, 'rwp_transaction_object', true );
-		$in[] = $obj . '-' . $t->ID;
-	}
-
-	$in = join( ',', $in );
-
-	$sql = "SELECT TransacaoID,Referencia FROM `PagSeguroTransacoes` WHERE Referencia IN (" . $in . ")";
-	$res = $mysqli->query( $sql );
-
-	/* Códigos identificadores da transação  */
-	if ( $res ) {
-		while ( $row = $res->fetch_assoc() ) {
-			$tids[ $row['Referencia'] ] = $row['TransacaoID'];
-		}
-	}
-	//$tids['ID 3207-3210'] = '699C3682-44B8-4110-93A7-4E55A61D58BC'; // teste Andre
-
-	$statuses = array();
-
-	if ( $tids ) :
-		foreach ( $tids as $key => $value ) {
-			/*
-				Realizando uma consulta de transação a partir do código identificador
-				para obter o objeto PagSeguroTransaction
-			*/
-			try {
-				$transaction = PagSeguroTransactionSearchService::searchByCode( $credentials, $value );
-				$status      = $transaction->getStatus()->getValue();
-				$intTrans    = explode( '-', $key );
-
-				if ( $status < 3 ) { // 1 == aguardando / 2 == análise
-
-					$msg = 'aguardando';
-				}
-				if ( 3 == $status || 4 == $status ) { // 3 == pago / 4 == disponivel
-
-					$msg = 'liberado';
-				}
-				if ( $status > 4 ) { // 5 == disputa / 6 == devolvida / 7 == cancelada
-
-					$msg = 'retirado';
-				}
-
-				require_once dirname( __FILE__ ) . '/post_types.php';
-				update_post_meta( $intTrans[1], 'rwp_transaction_status', $msg );
-
-
-			} catch ( PagSeguroServiceException $e ) {
-				echo '<pre>';
-				var_dump( $e );
-				echo '</pre>';
-				$msg = $status = $e->getMessage();
-			}
-
-			$statuses[ $value ] = array( 'status' => $status, 'rwp_transaction' => $intTrans[1], 'msg' => $msg );
-		}
-	endif;
-
-	// var_dump($statuses);
-}
-
 function reserva_wp_pagseguro_notificacoes() {
 	header( "access-control-allow-origin: https://pagseguro.uol.com.br" );
-
+	$opt = get_option( 'rwp_options' );
 	require_once dirname( __FILE__ ) . '/PagSeguroLibrary/PagSeguroLibrary.php';
 
 	try {
 		$credentials = new PagSeguroAccountCredentials(
-			'contato@matheusgimenez.com.br',
-			'81045E8D0399448E970C11732E435C2D'
+			$opt['rwp_pagseguro_email'],
+			$opt['rwp_pagseguro_token']
 		);
 
 		/* Tipo de notificação recebida */
@@ -343,31 +246,33 @@ function reserva_wp_pagseguro_notificacoes() {
 			//$tr_id =  $reference[1];
 			$tr_id = get_post_meta( $post_id, 'rwp_transaction_id', true );
 			$date  = new DateTime();
-			$date->modify( '+365 days' );
+			$date->modify( '+'.$opt['rwp_plano'].' days' );
 
 			require_once dirname( __FILE__ ) . '/post_types.php';
 			if ( $msg == 'liberado' ) {
 				update_post_meta( $tr_id, 'rwp_transaction_listing_id', $post_id );
 				update_post_meta( $tr_id, 'rwp_transaction_expire_date', $date->format( 'd-m-Y' ) );
-				$date->modify( '-7 days' );
+				$date->modify( '-10 days' );
 				update_post_meta( $tr_id, 'rwp_transaction_pre_expire_date', $date->format( 'd-m-Y' ) );
 				global $wpdb;
-				$wpdb->update($wpdb->posts, array('post_status' => 'publish'), array('id' => $post_id));
-				$post_autor = get_post($post_id);
-				$post_autor_mail = get_the_author_meta('user_email',$post_autor->post_author);
+				$wpdb->update( $wpdb->posts, array( 'post_status' => 'publish' ), array( 'id' => $post_id ) );
+				$post_autor      = get_post( $post_id );
+				$post_autor_mail = get_the_author_meta( 'user_email', $post_autor->post_author );
 
 				//$email = $post_autor_mail;
 				// Return a boolean!
 				//editar email
-				$to = $post_autor_mail;
-				$subject = 'Mudança de status no anuncio "'.$post_autor->post_title.'" ';
-				$message = 'O status do seu anuncio mudou para: liberado' ;
-				$from = 'no-reply@ecotemporadas.com';
-				$headers = 'From: '.get_bloginfo('name').''.' <' . $from.'>';
-				$headers .= '\nContent-type: text/html';
-				if($to && $subject && $message && $headers) {
-					wp_mail($to,$subject,$message,$headers);
-					echo $to.' - '.$subject.' - '.$message.' - '.$headers;
+				$to      = $post_autor_mail;
+				$subject = shortcode_emails($opt['rwp_email_liberado_title'],$post_id);
+				$message = shortcode_emails($opt['rwp_email_liberado'],$post_id);
+				$from    = 'no-reply@ecotemporadas.com';
+				//$headers = 'From: '.get_bloginfo('name').''.' <' . $from.'>';
+				$headers = 'MIME-Version: 1.0' . "\r\n";
+				$headers .= 'Content-type: text/html; charset=iso-"UTF-8"' . "\r\n";
+				$headers .= 'From: ' . get_bloginfo( 'name' ) . '' . ' <' . $from . '>' . "\r\n";
+				if ( $to && $subject && $message && $headers ) {
+					wp_mail( $to, $subject, $message, $headers );
+					echo $to . ' - ' . $subject . ' - ' . $message . ' - ' . $headers;
 				}
 
 			}

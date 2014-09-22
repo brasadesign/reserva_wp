@@ -399,4 +399,17 @@ function reserva_wp_set_plano() {
 }
 add_action( 'wp_ajax_reserva_wp_set_plano', 'reserva_wp_set_plano' );
 
+function shortcode_emails($str, $post_id){
+	$post = get_post($post_id);
+	$user = get_user_by( 'id', $post->post_author );
+	$object_id = get_post_meta( $post->ID, 'rwp_transaction_id', true );
+
+	$str = str_replace('[titulo]',$post->post_title,$str);
+	$str = str_replace('[link]',get_permalink($post_id),$str);
+	$str = str_replace('[usuario]',$user->display_name,$str);
+	$str = str_replace('[id]',$post_id,$str);
+	$str = str_replace('[expiracao]',get_post_meta($object_id,'rwp_transaction_expire_date',true),$str);
+
+	return $str;
+}
 ?>

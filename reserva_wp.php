@@ -38,7 +38,7 @@ if ( !function_exists( 'add_action' ) ) {
 */
 // define('RESERVA_WP_VERSION', '0.1');
 // define('RESERVA_WP_PLUGIN_URL', plugins_url( false, __FILE__ ) );
-
+define( 'RESERVAWPURL', plugin_dir_url( __FILE__ ) );
 /**
 * Includes
 */
@@ -51,6 +51,8 @@ require_once dirname( __FILE__ ) . '/cron.php';
 
 // Creates the post types and post statuses
 require_once dirname( __FILE__ ) . '/post_types.php';
+//options
+require_once dirname( __FILE__ ) . '/options.php';
 
 register_activation_hook( __FILE__, "reserva_wp_activate" );
 register_activation_hook( __FILE__, 'reserva_wp_cron_job_schedule' );
